@@ -12,23 +12,22 @@ library(data.table)
 library(rsocsim)
 
 ## set wd
-setwd("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/code/")
-
+setwd("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/simGPT")
 
 # Load functions to write SOCSIM rate files
 source("functions.R")
 
-# convert HFD data to SOCSIM format
-write_socsim_rates_HFD(Country = "NOR") 
-
-#convert HMD data to SOCSIM format
-write_socsim_rates_HMD(Country = "NOR")
+# # convert HFD data to SOCSIM format
+# write_socsim_rates_HFD(Country = "NOR") 
+# 
+# #convert HMD data to SOCSIM format
+# write_socsim_rates_HMD(Country = "NOR")
 
 #### SIMULATION ####
 
 ## CREATE INITIAL POPULATION AND MARRIAGE FILES
 # Set size of initial population
-size_opop <-  20000
+size_opop <-  5000
 
 # Create data.frame with 14 columns and nrows = size_opop
 presim.opop <- setNames(data.frame(matrix(data = 0, ncol = 14, nrow = size_opop)), 
@@ -60,6 +59,7 @@ write.table(presim.omar, "presim.omar", row.names = F, col.names = F)
 
 
 ## RUN SOCSIM SIMULATION
+for (i in c(1, 3)) {
 # Specify the folder where the supervisory and the rate files are. 
 # If the R session is running through the project, you can use the following command. 
 folder <- getwd()
@@ -69,15 +69,19 @@ supfile <- "socsim_NOR_nohet.sup"
 
 #### Choose a seed number (today's date) for the simulation: ####
 
-for (i in 1:10) {
-  
-  seed <- paste0("240220",i)
-  
+
+  seed <- paste0("240226",i)
+
+## Adjust to specifications in sup-file!
+
 het <- "no" # set to no or leave empty, depending on setting in sup
+bint <- "birth int. 0"
+alpha <- 0
+beta <- 1
 
 # Run a single SOCSIM-simulation with a given folder and the provided supervisory file
 # using the "future" process method
-rsocsim::socsim(folder, supfile, seed, process_method = "future")
+# rsocsim::socsim(folder, supfile, seed, process_method = "future")
 
 
 ## IMPORT OUTPUTS TO R
@@ -210,7 +214,7 @@ SocsimM <- asmr_sim %>%
 ## PLOT SIMULATED AND INPUT DATA TOGETHER
 
 # create folder to store graphs
-graph.folder <- paste0(folder,"/sim_results_", supfile, "_",seed,"_/graphs")# Check if the folder already exists
+graph.folder <- paste0(folder,"/sim_results_", supfile, "_",seed,"_/graphs/")# Check if the folder already exists
 if (!dir.exists(graph.folder)) {
   # If not, create the new folder
   dir.create(graph.folder)
@@ -225,7 +229,7 @@ yrs_plot <- c("[1847,1852)", "[1877,1882)", "[1907,1912)", "[1937,1942)", "[1967
 # Get the age levels to define them before plotting and avoid wrong order
 age_levels <- levels(asmr_sim$age)
 
-png(file = paste0(graph.folder,"/rates.png"),
+png(file = paste0(graph.folder,"rates.png"),
     width = 964, height = 556)
 bind_rows(HFD %>% rename(Estimate = ASFR), 
           SocsimF %>% rename(Estimate = ASFR)) %>% 
@@ -246,10 +250,12 @@ bind_rows(HFD %>% rename(Estimate = ASFR),
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   labs(title = paste0("Age-Specific Fertility and Mortality rates in Norway (1846-2022) 
        \n retrieved from HFD, HFC, HMD and a SOCSIM simulation 
-       \n ", het," heterogeneous fertility (", seed, ")"), 
+       \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, 
+                      "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"), 
        x = "Age") + 
   theme_bw()
 dev.off()
+
 
 
 ## GETTING ESTIMATES -- IDENTIFY KIN!
@@ -565,7 +571,8 @@ seq <- seqdef(gp, 5:72,
 png(file = paste0(graph.folder, "seqD_full.png"),
     width=964, height=556)
 seqdplot(seq, border = NA, ltext = c(gpstates), with.legend = "right", 
-         main = paste0("Simulated Data \n (1846 - 2022, HFC & HMD, ", het, " fertility heterogeneity, ", seed, ")"))
+         main = paste0("Simulated Data \n (1846 - 2022), HFC & HMD, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
+                       "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"))
 dev.off()
 
 #### CLUSTER ANALYSIS ####
@@ -615,7 +622,8 @@ chi_pam10 <- wcKMedRange(chi,
 png(file = paste0(graph.folder, "clustqual.png"),
     width=964, height=556)
 plot(chi_pam10, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2, 
-     main = paste0("Simulated data, ", het, " heterogeneous fertility, ", seed))
+     main = paste0("Simulated data, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
+                   "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"))
 dev.off()
 summary(chi_pam10, max.rank = 3)
 
@@ -637,21 +645,24 @@ png(file = paste0(graph.folder, "seqD_4.png"),
     width=964, height=556)
 seqdplot(seq, group = chi_pam10$clustering$cluster4,
          border = NA, ltext = c(gpstates), 
-         main = paste0("Chi PAM: 4 Clusters \n (sim. ", het, " het. fert.,", seed, ")"))
+         main = paste0("Chi PAM: 4 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
+                       "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"))
 dev.off()
 
 png(file = paste0(graph.folder, "seqD_5.png"),
     width=964, height=556)
 seqdplot(seq, group = chi_pam10$clustering$cluster5,
          border = NA, ltext = c(gpstates),  
-         main = paste0("Chi PAM: 5 Clusters \n (sim. ", het, " het. fert.,", seed, ")"))
+         main = paste0("Chi PAM: 5 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
+                       "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"))
 dev.off()
 
 png(file = paste0(graph.folder, "seqD_6.png"),
     width=964, height=556)
 seqdplot(seq, group = chi_pam10$clustering$cluster6,
         border = NA, ltext = c(gpstates),  
-        main = paste0("Chi PAM: 6 Clusters \n (sim. ", het, " het. fert.,", seed, ")"))
+        main = paste0("Chi PAM: 6 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
+                      "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"))
 dev.off()
 
 # OM trate
@@ -679,7 +690,8 @@ by(seq, chi_pam10$clustering$cluster6, seqmeant)
 png(file = paste0(graph.folder, "mean_plot.png"),
     width=964, height=556)
 seqmtplot(seq, group = chi_pam10$clustering$cluster6, border = NA,
-          ltext = c(gpstates), main = paste0("Chi Ward: 6 Clusters (sim. ", het, " het. fert., ", seed, ")"))
+          ltext = c(gpstates), main = paste0("Chi Ward: 6 Clusters sim. ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
+                                             "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"))
 dev.off()
 
 #### GRAPH ####
@@ -722,7 +734,8 @@ png(file = paste0(graph.folder, "seqD_6_lab.png"),
     width=964, height=556)
 seqdplot(seqchi, group = group.p(gp$chi), border = NA,
          ltext = gpstates, use.layout = TRUE, cex.legend = 1.2,
-         main = paste0("Simulated data, ", het, " fertility heterogeneity, ", seed, ")\n"))
+         main = paste0("Simulated data, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
+                       "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"))
 dev.off()
 
 # seqfplot(seqchi, group = group.p(gp$chi), idxs = 1:50,
@@ -781,7 +794,7 @@ st(descr,
               paste0("Grandparent at age ", max_age), "Number of grandchildren", "Age at birth of first grandchild",
               paste0("Both parents dead at age ", max_age), "Age at death of second parent", 
               "Female", "Marital status"),
-   title = paste0("Summary Statistics (Simulated data, ", het, " heterogeneous fertility, ", seed, ")"),
+   title = paste0("Summary Statistics (Simulated data, ", het, " heterogeneous fertility, ", bint,  ", opop size = ", seed, ")"),
    out = "csv",
    file = paste0(graph.folder, "sumtable"))
 
