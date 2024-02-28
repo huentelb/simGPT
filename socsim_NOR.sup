@@ -9,8 +9,8 @@
 segments 178  
 input_file presim
 
-bint 12
-hetfert 1
+bint 0
+hetfert 0
 marriage_queues 1
 marriage_eval distribution
 marriage_after_childbirth 1 
