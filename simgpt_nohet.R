@@ -25,6 +25,13 @@ source("functions.R")
 
 #### SIMULATION ####
 
+## Adjust to specifications you set in sup-file!
+
+het <- "" # set to no or leave empty, depending on setting in sup
+bint <- "birth int. 9"
+alpha <- 1
+beta <- 0.3
+
 ## CREATE INITIAL POPULATION AND MARRIAGE FILES
 # Set size of initial population
 size_opop <-  5000
@@ -59,29 +66,21 @@ write.table(presim.omar, "presim.omar", row.names = F, col.names = F)
 
 
 ## RUN SOCSIM SIMULATION
-for (i in c(1, 3)) {
+for (i in c(1, 1)) {
 # Specify the folder where the supervisory and the rate files are. 
 # If the R session is running through the project, you can use the following command. 
 folder <- getwd()
 
 # Type the name of the supervisory file  stored in the above folder:
-supfile <- "socsim_NOR_nohet.sup"
+supfile <- "socsim_NOR.sup"
 
 #### Choose a seed number (today's date) for the simulation: ####
 
-
-  seed <- paste0("240226",i)
-
-## Adjust to specifications in sup-file!
-
-het <- "no" # set to no or leave empty, depending on setting in sup
-bint <- "birth int. 0"
-alpha <- 0
-beta <- 1
+  seed <- paste0("240228",i)
 
 # Run a single SOCSIM-simulation with a given folder and the provided supervisory file
 # using the "future" process method
-# rsocsim::socsim(folder, supfile, seed, process_method = "future")
+rsocsim::socsim(folder, supfile, seed, process_method = "future")
 
 
 ## IMPORT OUTPUTS TO R
@@ -255,7 +254,6 @@ bind_rows(HFD %>% rename(Estimate = ASFR),
        x = "Age") + 
   theme_bw()
 dev.off()
-
 
 
 ## GETTING ESTIMATES -- IDENTIFY KIN!
