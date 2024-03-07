@@ -1,15 +1,15 @@
 ***************************************************************************
 * Supervisory file for SOCSIM microsimulation for Norway 1967-2022
-* Created on 05.02.2024 by Bettina Huenteler
+* Created on 07.03.2024 by Bettina Huenteler
 ***************************************************************************
 * This simulation uses as input age-specific data retrieved from 
 * the Human Fertility Database (HFD) and the Human Mortality Database (HMD) 
 * converted into SOCSIM format.
 ***************************************************************************
-segments 178  
+segments 256  
 input_file presim
 
-bint 0
+bint 9
 hetfert 0
 marriage_queues 1
 marriage_eval distribution
@@ -912,4 +912,394 @@ run
 duration 12
 include rates/NORfert2022
 include rates/NORmort2022
+run
+
+duration 12
+include rates/NORfert2023
+include rates/NORmort2023
+run
+
+duration 12
+include rates/NORfert2024
+include rates/NORmort2024
+run
+
+duration 12
+include rates/NORfert2025
+include rates/NORmort2025
+run
+
+duration 12
+include rates/NORfert2026
+include rates/NORmort2026
+run
+
+duration 12
+include rates/NORfert2027
+include rates/NORmort2027
+run
+
+duration 12
+include rates/NORfert2028
+include rates/NORmort2028
+run
+
+duration 12
+include rates/NORfert2029
+include rates/NORmort2029
+run
+
+duration 12
+include rates/NORfert2030
+include rates/NORmort2030
+run
+
+duration 12
+include rates/NORfert2031
+include rates/NORmort2031
+run
+
+duration 12
+include rates/NORfert2032
+include rates/NORmort2032
+run
+
+duration 12
+include rates/NORfert2033
+include rates/NORmort2033
+run
+
+duration 12
+include rates/NORfert2034
+include rates/NORmort2034
+run
+
+duration 12
+include rates/NORfert2035
+include rates/NORmort2035
+run
+
+duration 12
+include rates/NORfert2036
+include rates/NORmort2036
+run
+
+duration 12
+include rates/NORfert2037
+include rates/NORmort2037
+run
+
+duration 12
+include rates/NORfert2038
+include rates/NORmort2038
+run
+
+duration 12
+include rates/NORfert2039
+include rates/NORmort2039
+run
+
+duration 12
+include rates/NORfert2040
+include rates/NORmort2040
+run
+
+duration 12
+include rates/NORfert2041
+include rates/NORmort2041
+run
+
+duration 12
+include rates/NORfert2042
+include rates/NORmort2042
+run
+
+duration 12
+include rates/NORfert2043
+include rates/NORmort2043
+run
+
+duration 12
+include rates/NORfert2044
+include rates/NORmort2044
+run
+
+duration 12
+include rates/NORfert2045
+include rates/NORmort2045
+run
+
+duration 12
+include rates/NORfert2046
+include rates/NORmort2046
+run
+
+duration 12
+include rates/NORfert2047
+include rates/NORmort2047
+run
+
+duration 12
+include rates/NORfert2048
+include rates/NORmort2048
+run
+
+duration 12
+include rates/NORfert2049
+include rates/NORmort2049
+run
+
+duration 12
+include rates/NORfert2050
+include rates/NORmort2050
+run
+
+duration 12
+include rates/NORfert2051
+include rates/NORmort2051
+run
+
+duration 12
+include rates/NORfert2052
+include rates/NORmort2052
+run
+
+duration 12
+include rates/NORfert2053
+include rates/NORmort2053
+run
+
+duration 12
+include rates/NORfert2054
+include rates/NORmort2054
+run
+
+duration 12
+include rates/NORfert2055
+include rates/NORmort2055
+run
+
+duration 12
+include rates/NORfert2056
+include rates/NORmort2056
+run
+
+duration 12
+include rates/NORfert2057
+include rates/NORmort2057
+run
+
+duration 12
+include rates/NORfert2058
+include rates/NORmort2058
+run
+
+duration 12
+include rates/NORfert2059
+include rates/NORmort2059
+run
+
+duration 12
+include rates/NORfert2060
+include rates/NORmort2060
+run
+
+duration 12
+include rates/NORfert2061
+include rates/NORmort2061
+run
+
+duration 12
+include rates/NORfert2062
+include rates/NORmort2062
+run
+
+duration 12
+include rates/NORfert2063
+include rates/NORmort2063
+run
+
+duration 12
+include rates/NORfert2064
+include rates/NORmort2064
+run
+
+duration 12
+include rates/NORfert2065
+include rates/NORmort2065
+run
+
+duration 12
+include rates/NORfert2066
+include rates/NORmort2066
+run
+
+duration 12
+include rates/NORfert2067
+include rates/NORmort2067
+run
+
+duration 12
+include rates/NORfert2068
+include rates/NORmort2068
+run
+
+duration 12
+include rates/NORfert2069
+include rates/NORmort2069
+run
+
+duration 12
+include rates/NORfert2070
+include rates/NORmort2070
+run
+
+duration 12
+include rates/NORfert2071
+include rates/NORmort2071
+run
+
+duration 12
+include rates/NORfert2072
+include rates/NORmort2072
+run
+
+duration 12
+include rates/NORfert2073
+include rates/NORmort2073
+run
+
+duration 12
+include rates/NORfert2074
+include rates/NORmort2074
+run
+
+duration 12
+include rates/NORfert2075
+include rates/NORmort2075
+run
+
+duration 12
+include rates/NORfert2076
+include rates/NORmort2076
+run
+
+duration 12
+include rates/NORfert2077
+include rates/NORmort2077
+run
+
+duration 12
+include rates/NORfert2078
+include rates/NORmort2078
+run
+
+duration 12
+include rates/NORfert2079
+include rates/NORmort2079
+run
+
+duration 12
+include rates/NORfert2080
+include rates/NORmort2080
+run
+
+duration 12
+include rates/NORfert2081
+include rates/NORmort2081
+run
+
+duration 12
+include rates/NORfert2082
+include rates/NORmort2082
+run
+
+duration 12
+include rates/NORfert2083
+include rates/NORmort2083
+run
+
+duration 12
+include rates/NORfert2084
+include rates/NORmort2084
+run
+
+duration 12
+include rates/NORfert2085
+include rates/NORmort2085
+run
+
+duration 12
+include rates/NORfert2086
+include rates/NORmort2086
+run
+
+duration 12
+include rates/NORfert2087
+include rates/NORmort2087
+run
+
+duration 12
+include rates/NORfert2088
+include rates/NORmort2088
+run
+
+duration 12
+include rates/NORfert2089
+include rates/NORmort2089
+run
+
+duration 12
+include rates/NORfert2090
+include rates/NORmort2090
+run
+
+duration 12
+include rates/NORfert2091
+include rates/NORmort2091
+run
+
+duration 12
+include rates/NORfert2092
+include rates/NORmort2092
+run
+
+duration 12
+include rates/NORfert2093
+include rates/NORmort2093
+run
+
+duration 12
+include rates/NORfert2094
+include rates/NORmort2094
+run
+
+duration 12
+include rates/NORfert2095
+include rates/NORmort2095
+run
+
+duration 12
+include rates/NORfert2096
+include rates/NORmort2096
+run
+
+duration 12
+include rates/NORfert2097
+include rates/NORmort2097
+run
+
+duration 12
+include rates/NORfert2098
+include rates/NORmort2098
+run
+
+duration 12
+include rates/NORfert2099
+include rates/NORmort2099
+run
+
+duration 12
+include rates/NORfert2100
+include rates/NORmort2100
 run
