@@ -16,8 +16,9 @@ options(scipen=999999)
 write_socsim_rates_HFD <- function(Country) {
   
   # Read HFD ASFR
-  ASFR <- read.table(file = paste0("Input/", Country,"asfrRR.txt"), 
-                    as.is=T, header=T, skip=2, stringsAsFactors=F)
+  ASFR <- read.table(file = paste0("Input/", Country,"asfrRR_med.txt"), 
+                     # Skip 0 lines because I removed info on data sources
+                    as.is=T, header=T, skip=0, stringsAsFactors=F)
   
   # Wrangle data and compute monthly fertility rates
   ASFR <- 
@@ -109,12 +110,12 @@ write_socsim_rates_HFD <- function(Country) {
 write_socsim_rates_HMD <- function(Country) {
   
   # Read HMD female life tables
-  ltf <- read.table(file= paste0("Input/","fltper_1x1.txt"),
-                    as.is=T, header=T, skip=2, stringsAsFactors=F)
+  ltf <- read.table(file= paste0("Input/","fltper_1x1_med.txt"),
+                    as.is=T, header=T, skip=0, stringsAsFactors=F)
   
   # Read HMD male life tables
-  ltm <- read.table(file= paste0("Input/", "mltper_1x1.txt"),
-                    as.is=T, header=T, skip=2, stringsAsFactors=F)
+  ltm <- read.table(file= paste0("Input/", "mltper_1x1_med.txt"),
+                    as.is=T, header=T, skip=0, stringsAsFactors=F)
 
   # Wrangle data and compute monthly mortality probabilities
   ASMP <- 
@@ -122,14 +123,21 @@ write_socsim_rates_HMD <- function(Country) {
     select(Year, Age, qx) %>% 
     left_join(ltm %>% select(Year, Age, qx), 
               by = c("Year","Age"), suffix = c("_F","_M")) %>% 
-    mutate(Age = case_when(Age == "110+" ~ "110",
-                           TRUE ~ Age),
-           Age = as.numeric(Age), 
-           qx_Fmo = ifelse(Age == 110, qx_F/12, 1-(1-qx_F)^(1/12)),
-           qx_Mmo = ifelse(Age == 110, qx_M/12, 1-(1-qx_M)^(1/12)), 
+    mutate(qx_Fmo = ifelse(Age == 100, qx_F/12, 1-(1-qx_F)^(1/12)),
+           qx_Mmo = ifelse(Age == 100, qx_M/12, 1-(1-qx_M)^(1/12)), 
            Age_up = Age + 1, # SOCSIM uses the upper age bound
            Month = 0) %>% 
     select(c(Year, Age_up, Month, qx_Fmo, qx_Mmo))
+
+  # PREVIOUS CODE WITHOUT UNWPP AND AGE RANGE TO 110  
+  # mutate(Age = case_when(Age == "110+" ~ "110",
+  #                        TRUE ~ Age),
+  #        Age = as.numeric(Age), 
+  #        qx_Fmo = ifelse(Age == 110, qx_F/12, 1-(1-qx_F)^(1/12)),
+  #        qx_Mmo = ifelse(Age == 110, qx_M/12, 1-(1-qx_M)^(1/12)), 
+  #        Age_up = Age + 1, # SOCSIM uses the upper age bound
+  #        Month = 0) %>% 
+  #   select(c(Year, Age_up, Month, qx_Fmo, qx_Mmo))
   
   # Extract the years available in HMD
   years <- ASMP %>% pull(Year) %>% unique()
@@ -144,7 +152,7 @@ write_socsim_rates_HMD <- function(Country) {
     
     # Find the index of each year of the iteration
     n <- which(Year == years)
-    n_row <- (n-1)*111 + rows_ageM
+    n_row <- (n-1)*101 + rows_ageM
     
     # Open an output file connection
     outfilename <- file(paste0("rates/",Country,"mort",Year), "w") 
