@@ -34,7 +34,7 @@ The UNWPP data come in a different format than the HFC/HFD and HMD data. You can
 * Female mortality: [fltper_1x1_med.txt](Input/fltper_1x1_med.txt)
 * Male mortality: [mltper_1x1_med.txt](Input/mltper_1x1_med.txt)
 
-## 2. Set up before you start
+### 2. Set up before you start
 Before you start with the microsimulation, please adjust the [setup](setup.R). We have automated many of the storing or labelling processes in the code. Therefore, you should check whether the information provided in the setup matches the simulation-specification etc. that you will be using. You should pay attention to the following options you can set:
 
 *Note: If you leave the code as is provided here, you only need to adjust (4) the base seed and (5) your working directory!*
@@ -45,7 +45,7 @@ Before you start with the microsimulation, please adjust the [setup](setup.R). W
 5. Base seed (within the code, we will run i different simulations that will then automatically be starting with the base_seed + i. This will create one output folder for each i simulation)
 6. Folder name (usually your working directory)
 
-## 3. Microsimulation (to build synthetic population register)
+### 3. Microsimulation (to build synthetic population register)
 1. Convert input data into monthly rates using [functions.R](functions.R)
 2. You could adjust the microsimulation settings in the [supfile](socsim_NOR.sup). For our current output we go with the following setting:
     - Birth interval: 9
@@ -55,7 +55,7 @@ Before you start with the microsimulation, please adjust the [setup](setup.R). W
     - Initial population size = 10,000 (not in supfile but in the main code)
 
 
-## 4. Build dataset to analyse generational placement trajectories
+### 4. Build dataset to analyse generational placement trajectories
 1. Identify parents and focal's age when the second parent died
 2. Identify children and focal's age when the first child was born
 3. Identify grandchildren and focal's age when the first grandchild was born
@@ -64,7 +64,7 @@ Before you start with the microsimulation, please adjust the [setup](setup.R). W
     - One column for each age of focal containing their generational placement
     - Focal's generational placement can range from being dead to having all respective kin alive at the same time
 
-## 5. Run sequence and cluster analysis
+### 5. Run sequence and cluster analysis
 1. Define individual sequences, i.e. our generational placement trajectories
     - with option "DEL" to delete the positions containing missing values = focal is dead to replace the missing values. See Gabadinho et al. (2010) for more details on the options for handling missing values when defining sequence objects.
 3. Calculate pairwise distance between each trajectory
