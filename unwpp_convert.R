@@ -1,20 +1,23 @@
-### Generating dataset containing ASFR for rsocsim ###
-### Years 2023 - 2100
+### Generate dataset containing ASFR and ASMR for rsocsim ###
+### Add years 2023 - 2100 from UNWPP to HMD and HFC/HFD
 ### Country Norway
+
+# 1. Prepare data from UNWPP (2023 - 2100) to match structure from HMD and HFC/HFD
+# 2. Append UNWPP data to already prepared HMD and HFC/HFD (NORasfrRR.txt)
 
 library(dplyr)
 library(ggplot2)
 
 #### FERTILITY ####
 
-# Import csv file downloaded from https://population.un.org/wpp/  
+# Import UNWPP csv file downloaded from https://population.un.org/wpp/  
 unwpp_fert <- read.csv("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/WPP2022_Fertility_by_Age1.csv")
 
 # Read HFD ASFR
 NORasfrRR <- read.table(file = "/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/simGPT/Input/NORasfrRR.txt", 
                    as.is=T, header=T, skip=2, stringsAsFactors=F)
 
-# Wrangle data and keep only some years for comparison
+# Wrangle data and keep only some years for comparison between both sources
 hfd <- 
   NORasfrRR %>% 
   mutate(Age = case_when(Age == "14-" ~ "14",
@@ -31,6 +34,7 @@ unwpp_fer_NOR <-
          Time > 1949,
          Variant == "Medium" | Variant == "Low" | Variant == "Momentum") %>% 
   mutate(ASFR_o = ASFR,
+         # convert so it matches ASFR in HFD
          ASFR = ASFR_o / 1000,
          Source = "UNWPP",
          Age = AgeGrp,
@@ -53,7 +57,7 @@ unwpp_fer_NOR %>%
   scale_color_discrete(name = "Period") +
   scale_linetype_discrete()
 
-# Generate txt file that can be appended to existing NORasfrRR.txt (contains ASFR for past already)
+# Generate txt file that can be appended to existing NORasfrRR.txt (contains ASFR for past (HFD/HFC) already)
 
 ## 1. data.frame containing ages 14- and 50+ with ASFR of 0.0000
 # Create a vector containing the Years 2023 - 2100
@@ -62,13 +66,13 @@ year <- 2023:2100
 # Create a vector for Age with "14-" repeated 2100-2022 times and "50+" repeated 2100-2022 times
 age <- c(rep(14, 2100-2022), rep(50, 2100-2022))
 
-# Create a vector for ASFR with 0 repeated *2 times ( times for each category)
+# Create a vector for ASFR with 0 repeated *2 times (times for each category) as placeholder
 asfr <- rep(0, (2100-2022)*2)
 
 # Combine the vectors into a data.frame
 limits <- data.frame(Year = year, Age = age, ASFR = asfr)
 
-# 2. Combine UNWPP dataframe with additional ages 
+# 2. Combine UNWPP dataframe with additional ages (medium variant)
 unwpp_fer_med <- 
   bind_rows(limits,
             unwpp_fer_NOR %>%
@@ -89,13 +93,14 @@ unwpp_fer_med %>%
   scale_color_discrete(name = "Period") 
 
 
-#### APPEND TO EXISTING INPUT RATES ####
+#### APPEND TO EXISTING (past) INPUT RATES (NORasfrRR) ####
 
 NORasfRR_med <- 
   bind_rows(NORasfrRR, 
             unwpp_fer_med %>% 
               select(-Source, - Variant))
 
+# Compare ASFR between different years
 NORasfRR_med %>% 
   filter(Year == 1850 | Year == 1900 | Year == 1915 | Year == 1950 | Year == 2000 | Year == 2050 | Year == 2100) %>% 
   ggplot(aes(Age, ASFR, group = Year)) +
@@ -118,7 +123,7 @@ write.table(NORasfRR_med, file = "/Users/Bettina/sciebo/projects/GenerationalPla
 # Import csv file downloaded from https://population.un.org/wpp/  
 unwpp_mlt <- read.csv("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/WPP2022_Life_Table_Complete_Medium_Male_2022-2100.csv")
 
-# Read HFD ASFR
+# Read HMD ASMR
 mltper <- read.table(file = "/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/simGPT/Input/mltper_1x1.txt", 
                   as.is=T, header=T, skip=2, stringsAsFactors=F)
 
@@ -127,10 +132,11 @@ unwpp_mlt_NOR <-
   filter(Location == "Norway") %>% 
   mutate(Year = Time,
          Age = as.numeric(AgeGrpStart)) %>% 
+  filter(Year > 2022) %>% 
   select(Year, Age, mx, qx, ax, lx, dx, Lx, Tx, ex) 
 
 unwpp_mlt_NOR %>% 
-  filter(Year == 2022 | Year == 2050 | Year == 2075 | Year == 2100) %>% 
+  filter(Year == 2025 | Year == 2050 | Year == 2075 | Year == 2100) %>% 
   ggplot(aes(Age, mx, group = Year)) +
   geom_line(aes(color = as.factor(Year))) +
   scale_color_discrete(name = "Period") +
@@ -194,8 +200,11 @@ hmd <-
 mltper_1x1_med <- 
   bind_rows(hmd, 
             unwpp_mlt_NOR) 
-
-yrs_plot <- c("[1847,1852)", "[1877,1882)", "[1907,1912)", "[1937,1942)", "[1967,1972)", "[1997,2002)", "[2017,2022)")
+# mlttest <- 
+#   mltper_1x1_med %>% 
+#   mutate(Age = as.character(Age),
+#          Age = ifelse(Age == "100", "100+", Age))
+# 
 
 mltper_1x1_med %>% 
   filter(Year == 1850 | Year == 1900 | Year == 1950 | Year == 2000 | Year == 2050 | Year == 2100) %>% 
@@ -220,20 +229,21 @@ write.table(mltper_1x1_med, file = "/Users/Bettina/sciebo/projects/GenerationalP
 #### FEMALE MORTALITY ####
 
 # Import csv file downloaded from https://population.un.org/wpp/  
-unwpp_mlt <- read.csv("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/WPP2022_Life_Table_Complete_Medium_Female_2022-2100.csv")
+unwpp_flt <- read.csv("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/WPP2022_Life_Table_Complete_Medium_Female_2022-2100.csv")
 
-# Read HFD ASFR
-mltper <- read.table(file = "/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/simGPT/Input/mltper_1x1.txt", 
+# Read HMD ASMR
+fltper <- read.table(file = "/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/simGPT/Input/fltper_1x1.txt", 
                      as.is=T, header=T, skip=2, stringsAsFactors=F)
 
-unwpp_mlt_NOR <- 
-  unwpp_mlt %>% 
+unwpp_flt_NOR <- 
+  unwpp_flt %>% 
   filter(Location == "Norway") %>% 
   mutate(Year = Time,
          Age = as.numeric(AgeGrpStart)) %>% 
+  filter(Year > 2022) %>% 
   select(Year, Age, mx, qx, ax, lx, dx, Lx, Tx, ex) 
 
-unwpp_mlt_NOR %>% 
+unwpp_flt_NOR %>% 
   filter(Year == 2022 | Year == 2050 | Year == 2075 | Year == 2100) %>% 
   ggplot(aes(Age, mx, group = Year)) +
   geom_line(aes(color = as.factor(Year))) +
@@ -274,7 +284,7 @@ unwpp_mlt_NOR %>%
 
 # 1. Delete Ages 101 - 110+ from HMD data
 hmd <- 
-  mltper %>% 
+  fltper %>% 
   mutate(Age = case_when(Age == "110+" ~ "110",
                          TRUE ~ Age),
          Age = as.numeric(Age)) %>% 
@@ -295,13 +305,13 @@ hmd <-
          # formula (80)
          ex = ifelse(Age == 100, Tx/lx, ex)) 
 
-mltper_1x1_med <- 
+fltper_1x1_med <- 
   bind_rows(hmd, 
-            unwpp_mlt_NOR)
+            unwpp_flt_NOR)
 
 yrs_plot <- c("[1847,1852)", "[1877,1882)", "[1907,1912)", "[1937,1942)", "[1967,1972)", "[1997,2002)", "[2017,2022)")
 
-mltper_1x1_med %>% 
+fltper_1x1_med %>% 
   filter(Year == 1850 | Year == 1900 | Year == 1950 | Year == 2000 | Year == 2050 | Year == 2100) %>% 
   # Filter rates of 0, infinite (N_Deaths/0_Pop) and NaN (0_Deaths/0_Pop) values
   filter(mx != 0 & !is.infinite(mx) & !is.nan(mx)) %>% 
@@ -313,6 +323,6 @@ mltper_1x1_med %>%
 
 # Export table to txt
 # tabs to separate, with row names, and no quotation marks around characters
-write.table(mltper_1x1_med, file = "/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/simGPT/Input/mltper_1x1_med.txt",
+write.table(fltper_1x1_med, file = "/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/simGPT/Input/fltper_1x1_med.txt",
             sep = "\t", row.names = TRUE, quote = FALSE)
 

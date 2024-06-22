@@ -16,7 +16,7 @@ options(scipen=999999)
 write_socsim_rates_HFD <- function(Country) {
   
   # Read HFD ASFR
-  ASFR <- read.table(file = paste0("Input/", Country,"asfrRR_med.txt"), 
+  ASFR <- read.table(file = paste0(input_hfd), 
                      # Skip 0 lines because I removed info on data sources
                     as.is=T, header=T, skip=0, stringsAsFactors=F)
   
@@ -110,11 +110,11 @@ write_socsim_rates_HFD <- function(Country) {
 write_socsim_rates_HMD <- function(Country) {
   
   # Read HMD female life tables
-  ltf <- read.table(file= paste0("Input/","fltper_1x1_med.txt"),
+  ltf <- read.table(file= input_hmd_f,
                     as.is=T, header=T, skip=0, stringsAsFactors=F)
   
   # Read HMD male life tables
-  ltm <- read.table(file= paste0("Input/", "mltper_1x1_med.txt"),
+  ltm <- read.table(file= input_hmd_f,
                     as.is=T, header=T, skip=0, stringsAsFactors=F)
 
   # Wrangle data and compute monthly mortality probabilities
@@ -123,7 +123,8 @@ write_socsim_rates_HMD <- function(Country) {
     select(Year, Age, qx) %>% 
     left_join(ltm %>% select(Year, Age, qx), 
               by = c("Year","Age"), suffix = c("_F","_M")) %>% 
-    mutate(qx_Fmo = ifelse(Age == 100, qx_F/12, 1-(1-qx_F)^(1/12)),
+    mutate(Age = as.numeric(Age),
+           qx_Fmo = ifelse(Age == 100, qx_F/12, 1-(1-qx_F)^(1/12)),
            qx_Mmo = ifelse(Age == 100, qx_M/12, 1-(1-qx_M)^(1/12)), 
            Age_up = Age + 1, # SOCSIM uses the upper age bound
            Month = 0) %>% 
