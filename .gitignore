@@ -1,6 +1,9 @@
 result.opop
 rates/
-sim_results_*/
+sim_results_*
 .Rhistory
 *.opop
 *.omar
+*_graphs*
+Rplot*
+/sim_results_socsim_NOR_nohet.sup_240215_

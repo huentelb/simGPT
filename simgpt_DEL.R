@@ -1,4 +1,6 @@
 
+## LOAD / INSTALL NECESSARY PACKAGES
+
 # install.packages("devtools")
 # install.packages("tidyverse")
 library(tidyverse) #For data wrangling
@@ -11,30 +13,22 @@ library(data.table)
 # devtools::install_github("MPIDR/rsocsim")
 library(rsocsim)
 
-## set wd
-setwd("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/simGPT")
-
 # Load functions to write SOCSIM rate files
 source("functions.R")
 
-# # convert HFD data to SOCSIM format
-# write_socsim_rates_HFD(Country = "NOR") 
-# 
-# #convert HMD data to SOCSIM format
-# write_socsim_rates_HMD(Country = "NOR")
+# convert HFD data to SOCSIM format
+write_socsim_rates_HFD(Country = "NOR")
+
+#convert HMD data to SOCSIM format
+write_socsim_rates_HMD(Country = "NOR")
+
 
 #### SIMULATION ####
 
-## Adjust to specifications you set in sup-file!
-
-het <- "no" # set to no or leave empty, depending on setting in sup
-bint <- "birth int. 12"
-alpha <- 0
-beta <- 1
 
 ## CREATE INITIAL POPULATION AND MARRIAGE FILES
 # Set size of initial population
-size_opop <-  20000
+size_opop <-  50000
 
 # Create data.frame with 14 columns and nrows = size_opop
 presim.opop <- setNames(data.frame(matrix(data = 0, ncol = 14, nrow = size_opop)), 
@@ -66,22 +60,20 @@ write.table(presim.omar, "presim.omar", row.names = F, col.names = F)
 
 
 ## RUN SOCSIM SIMULATION
-for (i in c(5, 5)) {
-# Specify the folder where the supervisory and the rate files are. 
-# If the R session is running through the project, you can use the following command. 
-folder <- getwd()
+for (i in c(1, 1)) {
 
-# Type the name of the supervisory file  stored in the above folder:
-supfile <- "socsim_NOR.sup"
 
-#### Choose a seed number (today's date) for the simulation: ####
-
-  seed <- paste0("24021",i)
+# Automatically set a new seed for each simulation in i
+  seed <- paste0(base_seed,i)
 }
+
+# Record starting time 
+start <- Sys.time()
 # Run a single SOCSIM-simulation with a given folder and the provided supervisory file
 # using the "future" process method
 rsocsim::socsim(folder, supfile, seed, process_method = "future")
-
+# Record ending time
+end <- Sys.time()
 
 ## IMPORT OUTPUTS TO R
 # Read the opop file using the read_opop function
@@ -98,9 +90,9 @@ omar <- rsocsim::read_omar(folder = getwd(), supfile = supfile,
 ## ESTIMATE AGE-SPECIFIC RATES FROM SIMULATED DATA
 # Estimate age-specific fertility rates
 asfr_sim <- rsocsim::estimate_fertility_rates(opop = opop,
-                                              final_sim_year = 2022, #[Jan-Dec]
-                                              year_min = 1847, # Closed [
-                                              year_max = 2022, # Open )
+                                              final_sim_year = 2100, #[Jan-Dec]
+                                              year_min = 1850, # Closed [
+                                              year_max = 2100, # Open )
                                               year_group = 5, 
                                               age_min_fert = 15, # Closed [
                                               age_max_fert = 50, # Open )
@@ -108,11 +100,11 @@ asfr_sim <- rsocsim::estimate_fertility_rates(opop = opop,
 
 # Estimate age-specific mortality rates
 asmr_sim <- rsocsim::estimate_mortality_rates(opop = opop, 
-                                              final_sim_year = 2022, # [Jan-Dec]
-                                              year_min = 1847, # Closed
-                                              year_max = 2022, # Open )
+                                              final_sim_year = 2100, # [Jan-Dec]
+                                              year_min = 1850, # Closed
+                                              year_max = 2100, # Open )
                                               year_group = 5,
-                                              age_max_mort = 110, # Open )
+                                              age_max_mort = 100, # Open )
                                               age_group = 5) #[,)
 
 
@@ -131,8 +123,8 @@ year_range_fert <- min(year_breaks_fert):max(year_breaks_fert-1)
 age_breaks_fert <- unique(as.numeric(str_extract_all(asfr_sim$age, "\\d+", simplify = T)))
 
 # Read the same HFD file used to write the input fertility files
-HFD <- read.table(file = "Input/NORasfrRR.txt", 
-                  as.is=T, header=T, skip=2, stringsAsFactors=F)
+HFD <- read.table(file = input_hfd, 
+                  as.is=T, header=T, skip=0, stringsAsFactors=F)
 
 # Wrangle data and compute monthly fertility rates
 HFD <- HFD %>% 
@@ -152,12 +144,24 @@ HFD <- HFD %>%
   mutate(Source = "HFD/HMD", 
          Rate = "ASFR")
 
+
 # Wrangle SOCSIM data
 SocsimF <- asfr_sim %>% 
   rename(ASFR = socsim) %>% 
   mutate(Source = "SOCSIM",
          Rate = "ASFR")
 
+yrs_plot <- c("[1850,1855)", "[1880,1885)", "[1910,1915)", "[1940,1945)", "[1970,1975)", "[2000,2005)", "[2020,2025)") 
+
+# HFD %>% 
+#   filter(year %in% yrs_plot) %>% 
+#   ggplot(aes(age, ASFR, group = year, color = year)) +
+#   geom_line() 
+# 
+# SocsimF %>% 
+#   filter(year %in% yrs_plot) %>% 
+#   ggplot(aes(age, ASFR, group = year, color = year)) +
+#   geom_line() 
 
 # MORTALITY
 # Extract year and age breaks used in the estimate_mortality_rates() to apply the same values to HMD data
@@ -172,12 +176,12 @@ age_breaks_mort <- unique(as.numeric(str_extract_all(asmr_sim$age, "\\d+", simpl
 
 
 # Read the same HMD female life table 1x1 file used to write the input mortality files
-ltf <- read.table(file="Input/fltper_1x1.txt",
-                  as.is=T, header=T, skip=2, stringsAsFactors=F)
+ltf <- read.table(file=input_hmd_f,
+                  as.is=T, header=T, skip=0, stringsAsFactors=F)
 
 # Read the same HMD male life table 1x1 file used to write the input mortality files
-ltm <- read.table(file="Input/mltper_1x1.txt",
-                  as.is=T, header=T, skip=2, stringsAsFactors=F)
+ltm <- read.table(file=input_hmd_m,
+                  as.is=T, header=T, skip=0, stringsAsFactors=F)
 
 # Wrangle HMD life tables
 HMD <- ltf %>%
@@ -186,8 +190,7 @@ HMD <- ltf %>%
   bind_rows(ltm %>% 
               select(Year, Age, mx) %>%  
               mutate(Sex = "Male")) %>% 
-  mutate(Age = ifelse(Age == "110+", "110", Age),
-         Age = as.numeric(Age)) %>% 
+  mutate(Age = as.numeric(Age)) %>% 
   filter(Year %in% year_range_mort) %>% 
   mutate(year = cut(Year, breaks = year_breaks_mort, 
                     include.lowest = F, right = F, ordered_results = T),
@@ -208,12 +211,58 @@ SocsimM <- asmr_sim %>%
          Rate = "ASMR") %>% 
   select(year, Sex, age,  mx, Source, Rate)
 
+yrs_plot <- c("[1850,1851)", "[1880,1881)", "[1910,1911)", "[1940,1941)", "[1970,1971)", "[2000,2001)", "[2020,2021)") 
+yrs_plot <- c("[1850,1855)", "[1880,1885)", "[1910,1915)", "[1940,1945)", "[1970,1975)", "[2050,2055)", "[2020,2025)", "[2095,2100)") 
+
+# HMD22 <- 
+#   HMD %>% 
+#   filter(year == "[2021,2022)" | year == "[2020,2021)" | year =="[2022,2023)",
+#          Sex == "Female")
+# 
+# Socsim22 <- 
+#   SocsimM %>% 
+#   filter(year == "[2021,2022)" | year == "[2020,2021)" | year =="[2022,2023)",
+#          Sex == "Female")
+
+SocsimM %>% 
+  filter(year %in% yrs_plot,
+         Sex == "Male") %>% 
+  filter(mx != 0 & !is.infinite(mx) & !is.nan(mx)) %>% 
+  ggplot(aes(age, mx, group = year, color = year)) +
+  geom_line() +
+  scale_y_continuous(trans = "log10") +
+  labs(title = "Male (Input)")
+
+HMD %>% 
+  filter(year %in% yrs_plot,
+         Sex == "Male") %>% 
+  ggplot(aes(age, mx, group = year, color = year)) +
+  geom_line() +
+  scale_y_continuous(trans = "log10") +
+  labs(title = "Male (Input)")
+
+
+SocsimM %>% 
+  filter(year %in% yrs_plot,
+         Sex == "Female") %>% 
+  ggplot(aes(age, mx, group = year, color = year)) +
+  geom_line() +
+  scale_y_continuous(trans = "log10") +
+  labs(title = "Female (SOCSIM)")
+
+SocsimM %>% 
+  filter(year %in% yrs_plot,
+         Sex == "Male") %>% 
+  ggplot(aes(age, mx, group = year, color = year)) +
+  geom_line() +
+  scale_y_continuous(trans = "log10") +
+  labs(title = "Male (SOCSIM)")
 
 
 ## PLOT SIMULATED AND INPUT DATA TOGETHER
 
 # create folder to store graphs
-graph.folder <- paste0(folder,"/sim_results_", supfile, "_",seed,"_/graphs/DEL/")# Check if the folder already exists
+graph.folder <- paste0(folder,"/sim_results_", supfile, "_",seed,"_/graphs/")# Check if the folder already exists
 if (!dir.exists(graph.folder)) {
   # If not, create the new folder
   dir.create(graph.folder)
@@ -223,7 +272,7 @@ if (!dir.exists(graph.folder)) {
 }
 
 ## Plotting ASFR and ASMR (for females) from HFD/HMD vs SOCSIM 
-yrs_plot <- c("[1847,1852)", "[1877,1882)", "[1907,1912)", "[1937,1942)", "[1967,1972)", "[1997,2002)", "[2017,2022)") 
+yrs_plot <- c("[1850,1855)", "[1880,1885)", "[1910,1915)", "[1940,1945)", "[1970,1975)", "[2050,2055)", "[2020,2025)", "[2095,2100)") 
 
 # Get the age levels to define them before plotting and avoid wrong order
 age_levels <- levels(asmr_sim$age)
@@ -275,7 +324,6 @@ asYr <- function(month, last_month=last_month, final_sim_year=final_sim_year) {
 
 #Parameters specific to this simulation: will need to be changed
 last_month <- max(opop$dob) # Last simulated month
-final_sim_year <- 2022
 
 #Cleaning our population file
 opop <- opop %>% 
@@ -285,13 +333,17 @@ opop <- opop %>%
   mutate(dob_year = asYr(dob, last_month=last_month, final_sim_year=final_sim_year),
          dod_year = asYr(dod, last_month=last_month, final_sim_year=final_sim_year))
 
-
 # Saving opop data frame for usage in R on my Mac
 save(opop, file = paste0(folder,"/sim_results_", supfile, "_",seed,"_/opop.RData"))
 
 
+
+
+## PREPARATION SEQUENCE ANALYSIS ##
+
 #### PARENTS ####
 ## Build register containing death dates for parents for sample individuals (born 1953 and alive in 2019)
+
 
 # load simulated register data
 load(paste0(folder, "/sim_results_", supfile, "_", seed, "_/opop.RData"))
@@ -300,9 +352,14 @@ library(data.table)
 library(dtplyr)
 library(dplyr, warn.conflicts = FALSE)
 
+# Set selected cohort and maximum age to be displayed in SA
+# size of 2000 birth cohort: 59,234
+cohort = 2000
+max_age <- 100 # (for censoring of life courses)
+
 sample <- opop %>% 
   # keep if born in 1953
-  filter(dob_year==1953)  
+  filter(dob_year == cohort)  
 
 mothers <- sample %>% 
   # join to mother identifier (mom) in sample (left) data from opop (right) 
@@ -328,7 +385,12 @@ lateparent <- parents %>%
   group_by(pid) %>% 
   slice_max(dod_year_p, with_ties = FALSE) %>% 
   ungroup %>% 
-  mutate(dead_p = ifelse(dod_year_p > 2019, 0, 1))
+  # set dead_p (parent died during observation period) to 0 if died after end of obs period (=cohort+max_age)
+  # useful if life course is censored (e.g., for benchmarking against empirical register)
+  mutate(dead_p = ifelse(dod_year_p > cohort+max_age, 0, 1))
+
+
+
 
 #### CHILDREN ####
 ## Build register containing children of FEMALE sample individuals
@@ -366,10 +428,11 @@ oldestc <- children %>%
   group_by(pid) %>% 
   # add number of all children per sample individual
   add_count(pid, name = "numkids") %>% 
-  # select child that was born first
-  slice_min(dob_year_c) %>%
+  # select child that was born first (do not allow multiple choices per sample individual)
+  slice_min(dob_year_c, with_ties = FALSE) %>%
   ungroup() %>% 
   mutate(numkids = ifelse(is.na(dob_year_c), NA, numkids)) 
+
 
 
 #### GRANDCHILDREN ####
@@ -423,17 +486,17 @@ oldestgc <- gchildren %>%
 
 #### ONE FAMILY ROOSTER ####
 gp_help <- left_join(sample, lateparent)
-gp_help <- left_join(gp_wide, oldestc)
-gp_help <- left_join(gp_wide, oldestgc)
+gp_help <- left_join(gp_help, oldestc)
+gp_help <- left_join(gp_help, oldestgc)
 
 # ...with most basic info
 gp_base <- gp_help %>% 
   select(pid, dob_year, dod_year, dod_year_p, dob_year_c, dob_year_gc) %>% 
-  # right-censor at year 2019 (that's when register is censored)
-  mutate(dod_year_p = ifelse(dod_year_p > 2019, NA, dod_year_p),
-         dob_year_c = ifelse(dob_year_c > 2019, NA, dob_year_c),
-         dob_year_gc = ifelse(dob_year_gc > 2019, NA, dob_year_gc),
-         dod_year = ifelse(dod_year > 2018, NA, dod_year)) %>% 
+  # right-censor at age 100 (that's when register is censored)
+  mutate(dod_year_p = ifelse(dod_year_p > cohort+max_age, NA, dod_year_p),
+         dob_year_c = ifelse(dob_year_c > cohort+max_age, NA, dob_year_c),
+         dob_year_gc = ifelse(dob_year_gc > cohort+max_age, NA, dob_year_gc),
+         dod_year = ifelse(dod_year > cohort+max_age, NA, dod_year)) %>% 
   # convert years into ages
   mutate(pdage = dod_year_p - dob_year,
          cage = dob_year_c - dob_year,
@@ -451,28 +514,33 @@ avg_gchild <- mean(gp_base$gcage, na.rm = TRUE)
 avg_dead <- mean(gp_base$dage, na.rm = TRUE)
 
 
-## Same logic as in STATA
+
+#### GP DATA SET ####
+
+# 1) Make long dataframe with one row for each age in the life course
+# 2) Fill rows with numbers indicating gp by kin type depending on age at gp-transitions 
+# 3) Create "sum" for gp to have one summary indicator
 
 n_sample  <- nrow(sample)
-max_age <- 68
-ages <- as.character(c(1:max_age-1))
+ages <- as.character(c(0:max_age))
 lab_ages <- paste0("age", ages)
-empty_cols <- data.frame(matrix(NA, nrow = n_sample, ncol = max_age))
+empty_cols <- data.frame(matrix(NA, nrow = n_sample, ncol = max_age+1))
 colnames(empty_cols) <- lab_ages
 
-
+# 1)
 gp_long <- gp_base %>% 
   select(pid, dage, pdage, cage, gcage) %>% 
   # duplicate each sample individual times the age range we consider to create long format
-  slice(rep(row_number(), each = max_age)) %>% 
-  # generate age var
+  slice(rep(row_number(), each = max_age+1)) %>% 
+  # generate age var and start with 0
   group_by(pid) %>% 
-  mutate(age = row_number()) %>% 
+  mutate(age = (row_number()-1)) %>% 
   
   # set ages after parents have died to 2 (1 = at least one parent; 2 = NO parent) 
   # if parental death not yet happened to 1
   mutate(gpp = ifelse(age >= pdage & !is.na(pdage), 2, 1),
          
+         # 2)
          # set ages after child(ren) were born to 10 (10 = at least one child; 20 = NO child)
          # if childless and before to 20
          gpc = ifelse(age >= cage & !is.na(cage), 10, 20),
@@ -481,6 +549,7 @@ gp_long <- gp_base %>%
          # if grandchildless and before to 200
          gpg = ifelse(age >= gcage & !is.na(gcage), 100, 200),
          
+         # 3)
          # generate "sum" of generational placements
          gp = gpp + gpc + gpg,
          
@@ -488,6 +557,8 @@ gp_long <- gp_base %>%
          gp = ifelse(age >= dage & !is.na(dage), 0, gp)) %>% 
   ungroup
 
+
+# Reshape to wide dataframe to obtain STS format (STates Sequences; used by TraMineR)
 library(tidyr)
 gp_wide <- gp_long %>%
   pivot_wider(
@@ -497,7 +568,9 @@ gp_wide <- gp_long %>%
     names_glue = "{.value}_{age}"
   )
 
-# transform numerics into characters
+
+
+# Transform numerics into characters
 # mapping dictionary (attention: logic between numerics and characters is inverted (P1xxxx or P0xxxx refers to xx1 or xx2))
 mapping <- c("D" = 0,
              "P1C0G0" = 221, "P0C0G0" = 222, 
@@ -515,6 +588,39 @@ gp <- gp_wide %>%
     . == mapping[7] ~ "P0C1G1",
     TRUE ~ as.character(.)
   )))
+
+gp <- left_join(gp, lateparent)
+gp <- left_join(gp, oldestc)
+gp <- left_join(gp, oldestgc)
+gp <- left_join(gp, sample)
+
+save(gp, file = paste0(folder,"/sim_results_", supfile, "_",seed,"_/gp",cohort,max_age,".RData"))
+
+
+#### MERGE MULTIPLE SIMULATION OUTPUT ####
+load(paste0(folder, "/sim_results_", supfile, "_2403082_/gp00.RData"))
+gp_2 <- gp
+load(paste0(folder, "/sim_results_", supfile, "_2403083_/gp00.RData"))
+gp_3 <- gp
+load(paste0(folder, "/sim_results_", supfile, "_2403084_/gp00.RData"))
+gp_4 <- gp
+
+gp <- rbind(gp_2, gp_3, gp_4)
+
+save(gp, file = paste0(folder,"/sim_results_", supfile, "_",seed,"4_/gp00.RData"))
+
+load(paste0(folder, "/sim_results_", supfile, "_2403084_/gp00.RData"))
+
+# create folder to store graphs
+graph.folder <- paste0(folder,"/sim_results_", supfile, "_",seed,"_/graphs/",cohort,"_",max_age,"/")# Check if the folder already exists
+if (!dir.exists(graph.folder)) {
+  # If not, create the new folder
+  dir.create(graph.folder)
+  cat("Folder created:", graph.folder, "\n")
+} else {
+  cat("Folder already exists:", graph.folder, "\n")
+}
+
 
 #### SEQUENCE ANALYSIS ####
 library(foreign)
@@ -545,41 +651,53 @@ gpstates <-c("G1G2", "G2",
 # Color palette
 cblind <- brewer.pal(6, "RdBu")
 
-# Aggregate identical sequences to reduce computing time and memory used
-# see Studer, 2013 (WeightedCluster Library Manual, Annex 1)
 
-# ac <- wcAggregateCases(gp[, 5:72])
-# ac
-
-# Define sequence object
-# with agg weights
-# seq <- seqdef(gp[ac$aggIndex, 5:72], 
-#               labels = gplabels,  
-#               cnames = ages, 
-#               tick.last = TRUE, 
-#               xtstep = 5, 
-#               cpal = cblind, 
-#               alphabet = gpalpha, 
-#               states = gpstates)
-
-seq <- seqdef(gp, 6:73, 
-              labels = gplabels_na,  
+# Define sequence object using the above characteristics
+seq <- seqdef(gp, 6:106, 
+              labels = gplabels,  
               cnames = ages, 
               tick.last = TRUE, 
               xtstep = 5, 
-              cpal = cblind_na, 
-              alphabet = gpalpha_na, 
-              states = gpstates_na,
+              cpal = cblind, 
+              alphabet = gpalpha, 
+              states = gpstates,
               missing = "D", right = "DEL")
 
-# Plots
-#seqIplot(seq, border = NA, ltext = c(gpstates), with.legend = "right")
+table(gp$gp_99)
+# Plot state distribution of life course
+#seqIplot(seq, border = NA, ltext = c(gpstates), with.legend = FALSE)
 png(file = paste0(graph.folder, "seqD_full.png"),
     width=964, height=556)
-seqdplot(seq, border = NA, ltext = c(gpstates), with.legend = "right", 
-         main = paste0("Simulated Data \n (1846 - 2022), HFC & HMD, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
-         missing.color = "#f7f7f7"))
+seqdplot(seq, border = NA, ltext = c(gpstates), with.legend = FALSE, 
+         main = paste0("Simulated Data \n (1846 - ",cohort+max_age,", ",cohort," birth cohort), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop), 
+         missing.color = "#f7f7f7", with.missing = T)
 dev.off()
+
+
+png(file = paste0(graph.folder, "seqI_full.png"),
+    width=964, height=556)
+seqIplot(seq, border = NA, ltext = c(gpstates), with.legend = FALSE, 
+         main = paste0("Simulated Data \n (1846 - ",cohort+max_age,", ",cohort," birth cohort), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop), 
+                       missing.color = "#f7f7f7")
+dev.off()
+
+png(file = paste0(graph.folder, "seqi100_full.png"),
+    width=964, height=556)
+seqiplot(seq, border = NA, ltext = c(gpstates), with.legend = FALSE, 
+         main = paste0("Simulated Data \n (1846 - ",cohort+max_age,", ",cohort," birth cohort), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop), 
+         missing.color = "#f7f7f7", idxs = 1:100)
+dev.off()
+
+
+# Meantime in general pop
+seqmeant(seq)
+png(file = paste0(graph.folder, "meant_full.png"),
+    width=964, height=556)
+seqmtplot(seq, border = NA, ltext = c(gpstates), with.legend = FALSE, 
+         main = paste0("Simulated Data \n (1846 - ",cohort+max_age,", ",cohort," birth cohort), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop))
+dev.off()
+
+
 
 #### CLUSTER ANALYSIS ####
 
@@ -604,7 +722,6 @@ chi_ward <- hclust(as.dist(chi), method = "ward.D")
 #omt_ward <- hclust(as.dist(omt), method = "ward.D")
 #omc_ward <- hclust(as.dist(omc), method = "ward.D")
 
-# add weights ", weights = ac$aggWeights" here if using ac
 chi_ward10 <- as.clustrange(chi_ward, diss = chi, ncluster = 10)
 chiWard.qual <- chi_ward10
 plot(chiWard.qual, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2)
@@ -622,14 +739,14 @@ plot(chiWard.qual, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2
 
 chi_pam10 <- wcKMedRange(chi,
                          kvals = 2:10,
-                         # add ", weights = ac$aggWeights" if using ac
                          initialclust = chi_ward)
 
+# Plot cluster quality
 png(file = paste0(graph.folder, "clustqual.png"),
     width=964, height=556)
 plot(chi_pam10, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2, 
      main = paste0("Simulated data, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
-                   "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"))
+                   "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"))
 dev.off()
 summary(chi_pam10, max.rank = 3)
 
@@ -645,79 +762,84 @@ summary(chi_pam10, max.rank = 3)
 # plot(omc_pam10, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2)
 # summary(omc_pam10, max.rank = 3)
 
+
+#### D plots ####
 # State distribution plots by clusters
 # CHI2
-#### D plots ####
+
+w = 2000
+h = 1250
+
 png(file = paste0(graph.folder, "seqD_4.png"),
-    width=964, height=556)
-seqdplot(seq, group = chi_pam10$clustering$cluster4,
-         border = NA, ltext = c(gpstates), 
+    width=w, height=h)
+seqdplot(seq, group = chi_pam10$clustering$cluster4, 
+         border = NA, ltext = c(gpstates), with.legend = FALSE, cex.axis = 2,
          main = paste0("Chi PAM: 4 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
+                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
          missing.color = "#f7f7f7")
 dev.off()
 
 png(file = paste0(graph.folder, "seqD_5.png"),
-    width=964, height=556)
+    width=w, height=h)
 seqdplot(seq, group = chi_pam10$clustering$cluster5,
-         border = NA, ltext = c(gpstates),  
+         border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
          main = paste0("Chi PAM: 5 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
+                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
          missing.color = "#f7f7f7")
 dev.off()
 
 png(file = paste0(graph.folder, "seqD_6.png"),
-    width=964, height=556)
+    width=w, height=h)
 seqdplot(seq, group = chi_pam10$clustering$cluster6,
-        border = NA, ltext = c(gpstates),  
+        border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
         main = paste0("Chi PAM: 6 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                      "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
+                      "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
         missing.color = "#f7f7f7")
 dev.off()
 
 png(file = paste0(graph.folder, "seqD_7.png"),
-    width=964, height=556)
+    width=w, height=h)
 seqdplot(seq, group = chi_pam10$clustering$cluster6,
-         border = NA, ltext = c(gpstates),  
+         border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
          main = paste0("Chi PAM: 7 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
+                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
          missing.color = "#f7f7f7")
 dev.off()
 
 #### F plots ####
 png(file = paste0(graph.folder, "seqF20_4.png"),
-    width=964, height=556)
+    width=w, height=h)
 seqfplot(seq, group = chi_pam10$clustering$cluster4,
-         border = NA, ltext = c(gpstates), 
+         border = NA, ltext = c(gpstates),  with.legend = FALSE, cex.axis = 2,
          main = paste0("Chi PAM: 4 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
+                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
          missing.color = "#f7f7f7", idxs = 1:20)
 dev.off()
 
 png(file = paste0(graph.folder, "seqF20_5.png"),
-    width=964, height=556)
+    width=w, height=h)
 seqfplot(seq, group = chi_pam10$clustering$cluster5,
-         border = NA, ltext = c(gpstates),  
+         border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
          main = paste0("Chi PAM: 5 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
+                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
          missing.color = "#f7f7f7", idxs = 1:20)
 dev.off()
 
 png(file = paste0(graph.folder, "seqF20_6.png"),
-    width=964, height=556)
+    width=w, height=h)
 seqfplot(seq, group = chi_pam10$clustering$cluster6,
-         border = NA, ltext = c(gpstates),  
+         border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
          main = paste0("Chi PAM: 6 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
+                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
          missing.color = "#f7f7f7", idxs = 1:20)
 dev.off()
 
 png(file = paste0(graph.folder, "seqF20_7.png"),
-    width=964, height=556)
+    width=w, height=h)
 seqfplot(seq, group = chi_pam10$clustering$cluster7,
-         border = NA, ltext = c(gpstates),  
+         border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
          main = paste0("Chi PAM: 7 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
+                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
          missing.color = "#f7f7f7", idxs = 1:20)
 dev.off()
 
@@ -741,85 +863,108 @@ dev.off()
 # seqdplot(seq, group = omc_pam10$clustering$cluster6,
 #          border = NA, ltext = c(gpstates), main = "OM constant PAM: 6 Clusters")
 
+
+
+
+
 # Mean time spent in each state by cluster
-by(seq, chi_pam10$clustering$cluster6, seqmeant)
+by(seq, chi_pam10$clustering$cluster5, seqmeant)
 png(file = paste0(graph.folder, "mean_plot_6.png"),
     width=964, height=556)
 seqmtplot(seq, group = chi_pam10$clustering$cluster6, border = NA,
           ltext = c(gpstates), main = paste0("Chi Ward: 6 Clusters sim. ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                                             "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-          missing.color = "#f7f7f7")
+                                             "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
+          missing.color = "#f7f7f7", with.legend = FALSE)
 dev.off()
 
 png(file = paste0(graph.folder, "mean_plot_5.png"),
     width=964, height=556)
 seqmtplot(seq, group = chi_pam10$clustering$cluster5, border = NA,
           ltext = c(gpstates), main = paste0("Chi Ward: 5 Clusters sim. ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                                             "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
+                                             "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
           missing.color = "#f7f7f7")
 dev.off()
 
-#### GRAPH ####
+#### LABELLED GRAPH FOR OPTIMAL CLUSTER SOLUTION ####
+
 # We extract X clusters and re-label them from 1 to X to replace the medoid identifiers
-# and attach the vector with the clusters to the main dataframe gp
 
 # identify medoids sorted by frequency
-# and disaggregate data
-
-# add "[ac$disaggIndex]" behind first row to disaggregate
-mc <- chi_pam10$clustering$cluster6
-med <- as.data.frame(sort(table(mc), increasing = TRUE))
+mc <- chi_pam10$clustering$cluster5
+med <- as.data.frame(sort(table(mc), decreasing = TRUE))
 med1 <- as.character(med[1,1])
 med2 <- as.character(med[2,1])
 med3 <- as.character(med[3,1])
 med4 <- as.character(med[4,1])
 med5 <- as.character(med[5,1])
-med6 <- as.character(med[6,1])
-mc.factor <- factor(mc, levels = c(med1, med2, med3, med4, med5, med6),
-                    as.character("1","2","3","4","5","6"),
-                    labels = c("Cluster 1 -\n Childless, early parental death",
-                               "Cluster 2 -\n Childless, late parental death",
-                               "Cluster 3 -\n Late 3-gen family",
-                               "Cluster 4 -\n 2-gen family)",
-                               "Cluster 5 -\n 4-gen family",
-                               "Cluster 6 -\n Early 3-gen family"))
+# med6 <- as.character(med[6,1])
+# med7 <- as.character(med[7,1])
+# create factor containing medioids incl labels
+mc.factor <- factor(mc, levels = c(med1, med2, med3, med4, med5),
+                    as.character("1","2","3","4","5"),
+                    labels = c("Cluster 1 -\n 3-gen family",
+                               "Cluster 2 -\n Childless",
+                               "Cluster 3 -\n 4-gen family",
+                               "Cluster 4 -\n 3-gen (via 2-gen) family",
+                               "Cluster 5 -\n 2-gen family"))
 
+# attach to dataframe to use as weights in plots
 gp$chi <- mc.factor
 
-seqchi <- seqdef(gp, 6:73,
-                 labels = gplabels,  
-                 cnames = ages, 
-                 tick.last = TRUE, 
-                 xtstep = 5, 
-                 cpal = cblind, 
-                 alphabet = gpalpha, 
-                 states = gpstates,
-                 missing = "D", right = "DEL")
+# generate new sequence object 
+# seqchi <- seqdef(gp, 6:106,
+#                  labels = gplabels,  
+#                  cnames = ages, 
+#                  tick.last = TRUE, 
+#                  xtstep = 5, 
+#                  cpal = cblind, 
+#                  alphabet = gpalpha, 
+#                  states = gpstates,
+#                  missing = "D", right = "DEL")
 
-png(file = paste0(graph.folder, "seqD_6_lab.png"),
-    width=964, height=556)
-seqdplot(seqchi, group = group.p(gp$chi), border = NA,
-         ltext = gpstates, use.layout = TRUE, cex.legend = 1.2,
+# different plots with labels
+png(file = paste0(graph.folder, "seqD_5_lab.png"),
+    width=w, height=h)
+seqdplot(seq, group = group.p(gp$chi), border = NA,
+         ltext = gpstates, with.legend = FALSE, cex.axis = 2,
          main = paste0("Simulated data, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
-                       "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"))
+                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"))
 dev.off()
 
-png(file = paste0(graph.folder, "seqI_6_lab.png"),
-    width=964, height=556)
-seqIplot(seqchi, group = group.p(gp$chi), border = NA,
-         ltext = gpstates, use.layout = TRUE, cex.legend = 1.2,
+png(file = paste0(graph.folder, "seqI_5_lab.png"),
+    width=w, height=h)
+seqIplot(seq, group = group.p(gp$chi), border = NA,
+         ltext = gpstates, with.legend = FALSE, cex.axis = 2,
          main = paste0("Simulated data, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
-                       "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
+                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
          missing.color = "#f7f7f7")
 dev.off()
 
-png(file = paste0(graph.folder, "seqf20_6_lab.png"),
-    width=964, height=556)
-seqfplot(seqchi, group = group.p(gp$chi), border = NA,
-         ltext = gpstates, use.layout = TRUE, cex.legend = 1.2,
+png(file = paste0(graph.folder, "seqf20_5_lab.png"),
+    width=w, height=h)
+seqfplot(seq, group = group.p(gp$chi), border = NA,
+         ltext = gpstates, with.legend = FALSE, cex.axis = 2,
          main = paste0("Simulated data, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
-                       "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
+                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
          missing.color = "#f7f7f7", idxs = 1:20)
+dev.off()
+
+png(file = paste0(graph.folder, "mean_plot_5_lab.png"),
+    width=w, height=h)
+seqmtplot(seq, group = group.p(gp$chi), border = NA,
+          ltext = c(gpstates), 
+          main = paste0("Simulated data, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
+                        "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
+          missing.color = "#f7f7f7", with.legend = FALSE)
+dev.off()
+
+png(file = paste0(graph.folder, "seqr_5_lab.png"),
+    width=w, height=h)
+seqrplot(seq, group = group.p(gp$chi), border = NA,
+          ltext = c(gpstates), 
+          main = paste0("Simulated data, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
+                        "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
+          missing.color = "#f7f7f7", with.legend = FALSE, diss = chi)
 dev.off()
 
 # seqfplot(seqchi, group = group.p(gp$chi), idxs = 1:50,
@@ -839,12 +984,13 @@ library(gtsummary)
 library(vtable)
 
 # merge parent alive until end of observation, number of kids and number of grandkids to data
-clusters <- left_join(gp, lateparent)
-clusters <- left_join(clusters, oldestc)
-clusters <- left_join(clusters, oldestgc)
-clusters <- left_join(clusters, sample)
+# clusters <- left_join(gp, lateparent)
+# clusters <- left_join(clusters, oldestc)
+# clusters <- left_join(clusters, oldestgc)
+# clusters <- left_join(clusters, sample)
 
-descr <- clusters %>% 
+
+descr <- gp %>% 
   select(pid, dage, pdage, cage, gcage, chi, dead_p, numkids, numgkids, fem, mstat) %>% 
   # set (grand)parent status to 0 if number of (grand)kids missing, 1 otherwise
   mutate(isparent = ifelse(is.na(numkids), 0, 1),
@@ -857,17 +1003,16 @@ descr <- clusters %>%
                        "Married"))) 
 
 # Save dataframe for comparing with other simulations later
-save(descr, file = paste0(folder, "/sim_results_", supfile, "_", seed, "_/sumfile_",seed,".RData"))
-dev.off()
+# save(descr, file = paste0(folder, "/sim_results_", supfile, "_", seed, "_/sumfile_",seed,".RData"))
+# dev.off()
 
 # Descriptive table using sumtable
 
-# SUMTABLE EXPORT KLAPPT HIER NOCH NICHT!!
 st(descr, 
    vars = c("isparent", "numkids", "cage", 
             "isgparent", "numgkids", "gcage", 
             "dead_p", "pdage",
-            "fem", "mstat"),
+            "fem", "mstat", "dage"),
    summ=c("mean(x)",
           "sd(x)"),
    summ.names = c("Mean",
@@ -877,9 +1022,9 @@ st(descr,
    labels = c(paste0("Parent at age ", max_age), "Number of children", "Age at birth of first child",
               paste0("Grandparent at age ", max_age), "Number of grandchildren", "Age at birth of first grandchild",
               paste0("Both parents dead at age ", max_age), "Age at death of second parent", 
-              "Female", "Marital status"),
+              "Female", "Marital status", "Age at own death"),
    title = paste0("Summary Statistics (Simulated data, ", het, " heterogeneous fertility, ", bint,  ", opop size = ", seed, ")"),
    out = "csv",
-   file = paste0(graph.folder, "sumtable"))
+   file = paste0(graph.folder, "sumtable_5"))
 
-}
+
