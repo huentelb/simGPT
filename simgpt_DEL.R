@@ -1,7 +1,8 @@
 
 ## LOAD / INSTALL NECESSARY PACKAGES
 
-# install.packages("devtools")
+#install.packages("devtools")
+library(devtools)
 # install.packages("tidyverse")
 library(tidyverse) #For data wrangling
 # install.packages("ggh4x")
@@ -28,7 +29,7 @@ write_socsim_rates_HMD(Country = "NOR")
 
 ## CREATE INITIAL POPULATION AND MARRIAGE FILES
 # Set size of initial population
-size_opop <-  50000
+size_opop <-  25000
 
 # Create data.frame with 14 columns and nrows = size_opop
 presim.opop <- setNames(data.frame(matrix(data = 0, ncol = 14, nrow = size_opop)), 
@@ -63,7 +64,7 @@ write.table(presim.omar, "presim.omar", row.names = F, col.names = F)
 for (i in c(1, 1)) {
 
 
-# Automatically set a new seed for each simulation in i
+# Automatically set a new seed for each simulation in i based on base_seed
   seed <- paste0(base_seed,i)
 }
 

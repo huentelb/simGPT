@@ -1,15 +1,20 @@
 # Set-up for microsimulations
 # Always make necessary adjustments BEFORE starting a new round of simulations here
 
+## 0. Link to GitHub Repository
+# https://github.com/huentelb/simGPT
 
 ## 1. Working directory
-setwd("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/simGPT")
+setwd("N:/Huenteler_Alburez/simGPT/analysis")
 
 
 # 2. Input files (usually no need to change)
 input_hfd <- "Input/NORasfrRR_med.txt" # fertility
 input_hmd_f <- "Input/fltper_1x1_med.txt" # female mortality
 input_hmd_m <- "Input/mltper_1x1_med.txt" # male mortality
+
+# 2.1 Scenario
+scenario <-  "Fmed_Mmed" # Fertility_Mortality
 
 ## 3. Adjust to specifications you set in sup-file so that labels contain right info
 het <- "no" # set to no or leave empty, depending on setting in sup
@@ -19,7 +24,7 @@ beta <- 1 # default 1
 
 # 4. Base seed (within the code, we will run i different simulations that will then automatically be starting with the base_seed + i. 
 # This will create one output folder for each i simulation)
-base_seed <- "241105" # usually set to date you conduct the simulation
+base_seed <- "241126" # usually set to date you conduct the simulation
 
 # 5. Specify the folder where the supervisory and the rate files are. 
 # If the R session is running through the project, you can use the following command. 
