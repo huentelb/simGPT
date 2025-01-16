@@ -7,33 +7,34 @@
 
 library(dplyr)
 library(ggplot2)
+library(readxl)
 
 #### FERTILITY ####
 
 # Import UNWPP csv file downloaded from https://population.un.org/wpp/  
-unwpp_fert24 <- read.csv("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/WPP2024_Fertility_by_Age1.csv")
+unwpp_fert <- read.csv("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/WPP2024_Fertility_by_Age1.csv.gz")
 # to fill year 2023 (not yet contained in HFD, neither in 2022 'low' and 'momentum' variants)
-unwpp_fert22 <- read.csv("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/WPP2022_Fertility_by_Age1.csv")
+# unwpp_fert22 <- read.csv("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/WPP2022_Fertility_by_Age1.csv")
 
-# Read HFD ASFR
-NORasfrRR <- read.table(file = "/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/simGPT/Input/NORasfrRR.txt", 
+# Read HFC ASFR
+NORasfrRR <- read.table(file = "/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/NORasfrRR.txt", 
                    as.is=T, header=T, skip=2, stringsAsFactors=F)
 
 
 # Wrangle data and keep only some years for comparison between both sources
-hfd <- 
+hfc <- 
   NORasfrRR %>% 
   mutate(Age = case_when(Age == "14-" ~ "14",
                          Age == "50+" ~ "50", 
                          TRUE ~ Age),
          Age = as.numeric(Age),
-         Source = "HFD") %>% 
+         Source = "HFC") %>% 
   filter(Year > 1949)
 
 
 # Select years and country and drop irrelevant vars
-unwpp_fer_NOR24 <- 
-  unwpp_fert24 %>% 
+unwpp_fert_NOR <- 
+  unwpp_fert %>% 
   filter(Location == "Norway", 
          Time > 1949,
          Variant == "Medium" | Variant == "Low" | Variant == "Momentum") %>% 
@@ -45,41 +46,28 @@ unwpp_fer_NOR24 <-
          Year = Time) %>% 
   select(Variant, Year, Age, ASFR, Source)
 
-# Select years and country and drop irrelevant vars
-unwpp_fer_NOR22 <- 
-  unwpp_fert22 %>% 
-  filter(Location == "Norway", 
-         Time == 2023,
-         Variant == "Low" | Variant == "Momentum") %>% 
-  mutate(ASFR_o = ASFR,
-         # convert so it matches ASFR in HFD
-         ASFR = ASFR_o / 1000,
-         Source = "UNWPP",
-         Age = AgeGrp,
-         Year = Time) %>% 
-  select(Variant, Year, Age, ASFR, Source)
-
-
-# Add UNWPP22 ASFR for 2023 to UNWPP24 for 'low' and 'momentum' variant
-unwpp_fer_NOR <- 
-  bind_rows(unwpp_fer_NOR24, unwpp_fer_NOR22) %>% 
-  dplyr::arrange(Variant, Year)
 
 # Compare ASFR between HFD and UNWPP
-bind_rows(hfd,  
-          unwpp_fer_NOR %>% filter(Variant == "Medium")) %>% 
+bind_rows(hfc,  
+          unwpp_fert_NOR %>% filter(Variant == "Medium")) %>% 
   filter(Year == 1950 | Year == 1975 | Year == 2000 | Year == 2015) %>% 
-  ggplot(aes(Age, ASFR, group = interaction(Year, Source))) +
-  geom_line(aes(colour = as.factor(Year), linetype = Source), linewidth = .8) +
-  scale_color_discrete(name = "Year")
+  ggplot(aes(Age, ASFR, 
+             group = interaction(Year, Source))) +
+  geom_line(aes(colour = as.factor(Year), 
+                linetype = Source), linewidth = .8) +
+  scale_color_discrete(name = "Year") +
+  labs(title = paste0("Comparing ASFR between HFC and UNWPP (", Sys.Date(), ")"))
 
 # Compare UNWPP ASFR between different scenarios
 unwpp_fer_NOR %>% 
   filter(Year == 2025 | Year == 2050 | Year == 2075 | Year == 2100) %>% 
-  ggplot(aes(Age, ASFR, group = interaction(Year, Variant))) +
-  geom_line(aes(colour = as.factor(Year), linetype = Variant), linewidth = .8) +
-  scale_color_discrete(name = "Period") +
-  scale_linetype_discrete()
+  ggplot(aes(Age, ASFR, 
+             group = interaction(Year, Variant))) +
+  geom_line(aes(colour = as.factor(Year), 
+                linetype = Variant), linewidth = .8) +
+  scale_color_discrete(name = "Year") +
+  scale_linetype_discrete() +
+  labs(title = paste0("Comparing UNWPP ASFR between different scenarios (", Sys.Date(), ")"))
 
 
 # Generate txt file that can be appended to existing NORasfrRR.txt (contains ASFR for past (HFD/HFC) already)
@@ -98,7 +86,7 @@ asfr <- rep(0, (2100-2022)*2)
 limits <- data.frame(Year = year, Age = age, ASFR = asfr)
 
 # 2. Combine UNWPP dataframe with additional ages 
-# 2.1 medium variant
+# 2.1 medium variant from 2023
 unwpp_fer_med <- 
   bind_rows(limits,
             unwpp_fer_NOR %>%
@@ -111,11 +99,14 @@ unwpp_fer_med <-
                          Age == "50" ~ "50+", 
                          TRUE ~ Age)) 
 
-# 2.2 low variant
+# 2.2 low variant (only from 2024; 2023 <- Medium = historical)
 unwpp_fer_low <- 
   bind_rows(limits,
             unwpp_fer_NOR %>%
-              filter (Year > 2022,
+              filter (Year == 2023,
+                      Variant == "Medium"),
+            unwpp_fer_NOR %>%
+              filter (Year > 2023,
                       Variant == "Low")) %>% 
   group_by(Year) %>% 
   arrange(Age, .by_group = TRUE) %>% 
@@ -124,11 +115,14 @@ unwpp_fer_low <-
                          Age == "50" ~ "50+", 
                          TRUE ~ Age)) 
 
-# 2.3 momentum variant
+# 2.3 momentum variant (only from 2024; 2023 <- Medium = historical)
 unwpp_fer_hi <- 
   bind_rows(limits,
             unwpp_fer_NOR %>%
-              filter (Year > 2022,
+              filter (Year == 2023,
+                      Variant == "Medium"),
+            unwpp_fer_NOR %>%
+              filter (Year > 2023,
                       Variant == "Momentum")) %>% 
   group_by(Year) %>% 
   arrange(Age, .by_group = TRUE) %>% 
@@ -138,23 +132,31 @@ unwpp_fer_hi <-
                          TRUE ~ Age)) 
     
 # Compare UNWPP ASFR between different years
-unwpp_fer_med %>% 
-  filter(Year == 2025 | Year == 2050 | Year == 2075 | Year == 2100) %>% 
-  ggplot(aes(Age, ASFR, group = Year)) +
+med <- unwpp_fer_med %>% 
+  filter(Year == 2023 | Year == 2025 | Year == 2050 | Year == 2075 | Year == 2100) %>% 
+  ggplot(aes(Age, ASFR, 
+             group = Year)) +
   geom_line(aes(colour = as.factor(Year)), linewidth = .8) +
-  scale_color_discrete(name = "Period") 
+  scale_color_discrete(name = "Year") +
+  labs(title = paste0("Medium"))
 
-unwpp_fer_low %>% 
-  filter(Year == 2025 | Year == 2050 | Year == 2075 | Year == 2100) %>% 
+low <- unwpp_fer_low %>% 
+  filter(Year == 2023 | Year == 2025 | Year == 2050 | Year == 2075 | Year == 2100) %>% 
   ggplot(aes(Age, ASFR, group = Year)) +
   geom_line(aes(colour = as.factor(Year)), linewidth = .8) +
-  scale_color_discrete(name = "Period") 
+  scale_color_discrete(name = "Year")  +
+  labs(title = paste0("Low"))
 
-unwpp_fer_hi %>% 
-  filter(Year == 2025 | Year == 2050 | Year == 2075 | Year == 2100) %>% 
+hi <- unwpp_fer_hi %>% 
+  filter(Year == 2023 | Year == 2025 | Year == 2050 | Year == 2075 | Year == 2100) %>% 
   ggplot(aes(Age, ASFR, group = Year)) +
   geom_line(aes(colour = as.factor(Year)), linewidth = .8) +
-  scale_color_discrete(name = "Period") 
+  scale_color_discrete(name = "Year")  +
+  labs(title = paste0("High (", Sys.Date(), ")"))
+
+library(patchwork)
+low + med + hi +
+  plot_layout(guides = 'collect')
 
 #### APPEND TO EXISTING (past) INPUT RATES (NORasfrRR) ####
 
@@ -174,23 +176,29 @@ NORasfRR_hi <-
               select(-Source, - Variant))
 
 # Compare ASFR between different years
-NORasfRR_med %>% 
+med <- NORasfRR_med %>% 
   filter(Year == 1850 | Year == 1900 | Year == 1915 | Year == 1950 | Year == 2000 | Year == 2050 | Year == 2100) %>% 
   ggplot(aes(Age, ASFR, group = Year)) +
   geom_line(aes(colour = as.factor(Year)), linewidth = .8) +
-  scale_color_discrete(name = "Period") 
+  scale_color_discrete(name = "Year")   +
+  labs(title = paste0("Medium"))
 
-NORasfRR_low %>% 
+low <- NORasfRR_low %>% 
   filter(Year == 1850 | Year == 1900 | Year == 1915 | Year == 1950 | Year == 2000 | Year == 2050 | Year == 2100) %>% 
   ggplot(aes(Age, ASFR, group = Year)) +
   geom_line(aes(colour = as.factor(Year)), linewidth = .8) +
-  scale_color_discrete(name = "Period") 
+  scale_color_discrete(name = "Year")   +
+  labs(title = paste0("Low"))
 
-NORasfRR_hi %>% 
+hi <- NORasfRR_hi %>% 
   filter(Year == 1850 | Year == 1900 | Year == 1915 | Year == 1950 | Year == 2000 | Year == 2050 | Year == 2100) %>% 
   ggplot(aes(Age, ASFR, group = Year)) +
   geom_line(aes(colour = as.factor(Year)), linewidth = .8) +
-  scale_color_discrete(name = "Period") 
+  scale_color_discrete(name = "Year")   +
+  labs(title = paste0("High (", Sys.Date(), ")"))
+
+low + med + hi +
+  plot_layout(guides = 'collect')
 
 # Export table to txt
 # tabs to separate, with row names, and no quotation marks around characters
@@ -209,32 +217,20 @@ write.table(NORasfRR_hi, file = "/Users/Bettina/sciebo/projects/GenerationalPlac
 #### MALE MORTALITY ####
 
 # Import csv file downloaded from https://population.un.org/wpp/  
-unwpp_mlt24 <- read.csv("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/WPP2024_Life_Table_Complete_Medium_Male_2024-2100.csv")
-unwpp_mlt22 <- read.csv("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/WPP2022_Life_Table_Complete_Medium_Male_2022-2100.csv")
+unwpp_mlt <- read_csv("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/WPP2024_Life_Table_Complete_Medium_Male_2024-2100.csv.gz")
 
 # Read HMD ASMR
-mltper <- read.table(file = "/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/simGPT/Input/mltper_1x1.txt", 
-                  as.is=T, header=T, skip=2, stringsAsFactors=F)
+hmd_m <- read_xlsx("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/HMD_mlt_1x1.xlsx",
+                   skip = 2)
 
-unwpp_mlt_NOR24 <- 
-  unwpp_mlt24 %>% 
+
+unwpp_mlt_NOR <- 
+  unwpp_mlt %>% 
   filter(Location == "Norway") %>% 
   mutate(Year = Time,
          Age = as.numeric(AgeGrpStart)) %>% 
   filter(Year >= 2024) %>% 
   select(Year, Age, mx, qx, ax, lx, dx, Lx, Tx, ex) 
-
-# fill 2023 UNWPP life table from UNWPP22 (HMD only until 2023; UNWPP24 starts in 2024)
-unwpp_mlt_NOR22 <- 
-  unwpp_mlt22 %>% 
-  filter(Location == "Norway") %>% 
-  mutate(Year = Time,
-         Age = as.numeric(AgeGrpStart)) %>% 
-  filter(Year == 2023) %>% 
-  select(Year, Age, mx, qx, ax, lx, dx, Lx, Tx, ex) 
-
-unwpp_mlt_NOR <- 
-  bind_rows(unwpp_mlt_NOR24, unwpp_mlt_NOR22)
 
 unwpp_mlt_NOR %>% 
   filter(Year == 2025 | Year == 2050 | Year == 2075 | Year == 2100) %>% 
@@ -244,40 +240,13 @@ unwpp_mlt_NOR %>%
   scale_y_continuous(trans = "log10") 
 
 
-# Add Ages 101-110 and add NA to content rows
-# Round numbers as in mltper_1x1?
-# year <- rep(2023:2100, each = 10) # rep times ages to cover
-# age <- rep(101:110, 2100-2022) # rep times years to cover
-# mx <- rep(0, (2100-2022)*10) # rep times ages over years to cover
-# qx <- rep(1, (2100-2022)*10)
-# ax <- rep(0, (2100-2022)*10)
-# lx <- rep(0, (2100-2022)*10)
-# dx <- rep(0, (2100-2022)*10)
-# Lx <- rep(0, (2100-2022)*10)
-# Tx <- rep(0, (2100-2022)*10)
-# ex <- rep(0, (2100-2022)*10)
-# 
-# highage <- data.frame(Year = year, Age = age, mx, qx, ax, lx, dx, Lx, Tx, ex)
-# 
-# # Combine UNWPP dataframe with additional Ages
-# unwpp_mlt_med <- 
-#   bind_rows(highage,
-#             unwpp_mlt_NOR) %>% 
-#               filter (Year > 2022) %>% 
-#   group_by(Year) %>% 
-#   arrange(Age, .by_group = TRUE) 
 
-# This chunk doesnt work as it messes up the order of Age -- dont know how to solve yet
-# mutate(Age = as.character(Age),
-#        Age = case_when(Age == "110" ~ "110+",
-#                        TRUE ~ Age)) %>% 
-  
 
 #### APPEND TO EXISTING INPUT RATES ####
 
 # 1. Delete Ages 101 - 110+ from HMD data
-hmd <- 
-  mltper %>% 
+hmd_m_mod <- 
+  hmd_m %>% 
   mutate(Age = case_when(Age == "110+" ~ "110",
                          TRUE ~ Age),
          Age = as.numeric(Age)) %>% 
@@ -299,7 +268,7 @@ hmd <-
          ex = ifelse(Age == 100, Tx/lx, ex)) 
 
 mltper_1x1_med <- 
-  bind_rows(hmd, 
+  bind_rows(hmd_mod, 
             unwpp_mlt_NOR) 
 # mlttest <- 
 #   mltper_1x1_med %>% 
@@ -329,32 +298,22 @@ write.table(mltper_1x1_med, file = "/Users/Bettina/sciebo/projects/GenerationalP
 
 #### FEMALE MORTALITY ####
 
-unwpp_flt24 <- read.csv("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/WPP2024_Life_Table_Complete_Medium_Female_2024-2100.csv")
-unwpp_flt22 <- read.csv("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/WPP2022_Life_Table_Complete_Medium_Female_2022-2100.csv")
+# Import csv file downloaded from https://population.un.org/wpp/  
+unwpp_flt <- read_csv("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/WPP2024_Life_Table_Complete_Medium_Female_2024-2100.csv.gz")
+
 
 # Read HMD ASMR
-fltper <- read.table(file = "/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/simGPT/Input/fltper_1x1.txt", 
-                     as.is=T, header=T, skip=2, stringsAsFactors=F)
+hmd_f <- read_xlsx("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/data/HMD_flt_1x1.xlsx",
+                   skip = 2)
 
-unwpp_flt_NOR24 <- 
-  unwpp_flt24 %>% 
+unwpp_flt_NOR <- 
+  unwpp_flt %>% 
   filter(Location == "Norway") %>% 
   mutate(Year = Time,
          Age = as.numeric(AgeGrpStart)) %>% 
   filter(Year >= 2024) %>% 
   select(Year, Age, mx, qx, ax, lx, dx, Lx, Tx, ex) 
 
-# fill 2023 UNWPP life table from UNWPP22 (HMD only until 2023; UNWPP24 starts in 2024)
-unwpp_flt_NOR22 <- 
-  unwpp_flt22 %>% 
-  filter(Location == "Norway") %>% 
-  mutate(Year = Time,
-         Age = as.numeric(AgeGrpStart)) %>% 
-  filter(Year == 2023) %>% 
-  select(Year, Age, mx, qx, ax, lx, dx, Lx, Tx, ex) 
-
-unwpp_flt_NOR <- 
-  bind_rows(unwpp_flt_NOR24, unwpp_flt_NOR22)
 
 unwpp_flt_NOR %>% 
   filter(Year == 2025 | Year == 2050 | Year == 2075 | Year == 2100) %>% 
@@ -364,39 +323,12 @@ unwpp_flt_NOR %>%
   scale_y_continuous(trans = "log10") 
 
 
-# Add Ages 101-110 and add NA to content rows
-# Round numbers as in mltper_1x1?
-# year <- rep(2023:2100, each = 10) # rep times ages to cover
-# age <- rep(101:110, 2100-2022) # rep times years to cover
-# mx <- rep(0, (2100-2022)*10) # rep times ages over years to cover
-# qx <- rep(1, (2100-2022)*10)
-# ax <- rep(0, (2100-2022)*10)
-# lx <- rep(0, (2100-2022)*10)
-# dx <- rep(0, (2100-2022)*10)
-# Lx <- rep(0, (2100-2022)*10)
-# Tx <- rep(0, (2100-2022)*10)
-# ex <- rep(0, (2100-2022)*10)
-# 
-# highage <- data.frame(Year = year, Age = age, mx, qx, ax, lx, dx, Lx, Tx, ex)
-# 
-# # Combine UNWPP dataframe with additional Ages
-# unwpp_mlt_med <- 
-#   bind_rows(highage,
-#             unwpp_mlt_NOR) %>% 
-#               filter (Year > 2022) %>% 
-#   group_by(Year) %>% 
-#   arrange(Age, .by_group = TRUE) 
-
-# This chunk doesnt work as it messes up the order of Age -- dont know how to solve yet
-# mutate(Age = as.character(Age),
-#        Age = case_when(Age == "110" ~ "110+",
-#                        TRUE ~ Age)) %>% 
 
 
 #### APPEND TO EXISTING INPUT RATES ####
 
 # 1. Delete Ages 101 - 110+ from HMD data
-hmd <- 
+hmd_f_mod <- 
   fltper %>% 
   mutate(Age = case_when(Age == "110+" ~ "110",
                          TRUE ~ Age),
@@ -419,7 +351,7 @@ hmd <-
          ex = ifelse(Age == 100, Tx/lx, ex)) 
 
 fltper_1x1_med <- 
-  bind_rows(hmd, 
+  bind_rows(hmd_f_mod, 
             unwpp_flt_NOR)
 
 yrs_plot <- c("[1847,1852)", "[1877,1882)", "[1907,1912)", "[1937,1942)", "[1967,1972)", "[1997,2002)", "[2017,2022)")
