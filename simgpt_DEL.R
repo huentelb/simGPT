@@ -273,8 +273,8 @@ bind_rows(HMD %>% rename(Estimate = mx),
   facetted_pos_scales(y = list(ASFR = scale_y_continuous(),
                                ASMR =  scale_y_continuous(trans = "log10")))+
   scale_x_discrete(guide = guide_axis(angle = 90)) +
-  labs(title = paste0("Age-Specific Fertility and Mortality rates of Men in Norway"),
-       subtitle = paste0("Retrieved from HFC, HMD and a SOCSIM simulation \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, "\n alpha = ", alpha, ", beta = ", beta, " (", seed, "), estimation time: ", round(duration, 2), " mins"), 
+  labs(title = paste0("Age-Specific Mortality rates of Men in Norway"),
+       subtitle = paste0("Retrieved from HMD and a SOCSIM simulation \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, "\n alpha = ", alpha, ", beta = ", beta, " (", seed, "), estimation time: ", round(duration, 2), " mins"), 
        x = "Age") + 
   theme_bw()
 dev.off()
