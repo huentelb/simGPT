@@ -6,8 +6,10 @@ To reproduce, have the following packages installed:
 2. `TraMineR`, `TraMineRextras`, and `WeightedCluster`
 
 ## This is the output we want to produce
-1. Synthetic population register of individuals living in Norway in which we can link parents to their children
-2. Generational placement patterns (see [Hünteler, 2022](https://www.sciencedirect.com/science/article/pii/S104026082100054X)) for the birth cohorts 1953 and 2000 from ages 0 to 100 
+1. Synthetic population register of individuals living in Norway in which we can link parents to their children.
+2. Generational placement patterns (see [Hünteler, 2022](https://www.sciencedirect.com/science/article/pii/S104026082100054X)) from ages 0 to 100 for the birth cohorts
+    - 1953: for benchmarking against existing historical register data, and
+    - 2000: for projecting generational placement trajectories into the future. 
 
 ## This is how we do it
 
@@ -17,17 +19,19 @@ To reproduce, have the following packages installed:
 1. Fertility data come from the following sources
     - Human Fertility Collection (HFC) for the past periods 1846 – 1966
     - Human Fertility Database (HFD) for the past periods 1967 – 2022
-    - United Nations World Population Prospects (UNWPP) for the future periods 2023 – 2100
+    - United Nations World Population Prospects (UNWPP24) for the past period 2023
+    - United Nations World Population Prospects (UNWPP24) for the future periods 2024 – 2100
+        - with three scenarios: low, medium, momentum
 
 2. Mortality data come from the following sources
-    - Human Mortality Database (HMD) for the past periods 1846 – 2022
-    - UNWPP for the future periods 2023 – 2100
+    - Human Mortality Database (HMD) for the past periods 1846 – 2023
+    - UNWPP24 for the future periods 2024 – 2100
 
 The HFC/HFD data contain the period (1x1) age-specific female fertility rates between ages 14 and 50 (open-ended categories) (already combined and stored as [NORasfrRR.txt](Input/NORasfrRR.txt)).
 
 The HMD data contain the period (1x1) life tables by sex ([fltper_1x1.txt](Input/fltper_1x1.txt) for women and [mltper_1x1.txt](Input/mltper_1x1.txt) for men). 
 
-The UNWPP data come in a different format than the HFC/HFD and HMD data. You can find the code to adjust the UNWPP data to the format of the HFC/HFD and HMD data as well as to append it to the time series of these past time series in the [unwpp_convert.R](unwpp_convert.R) file. For the simulations, we chose the medium scenarios for fertility and mortality. You do not need to run it because these data are already stored in the repository, too. 
+The UNWPP data come in a different format than the HFC/HFD and HMD data. You can find the code to adjust the UNWPP data to the format of the HFC/HFD and HMD data as well as to append it to the time series of these past time series in the [unwpp_convert.R](unwpp_convert.R) file. You do not need to run it because these data are already stored in the repository, too. 
 
 *The simulations are based on the following data (1846-2100 time series, 1x1), stored in [Input](Input)*
 * Fertility: [NORasfrRR_med.txt](Input/NORasfrRR_med.txt)
