@@ -270,8 +270,7 @@ bind_rows(HMD %>% rename(Estimate = mx),
   facet_wrap(. ~ Rate, scales = "free") + 
   geom_line(aes(colour = year, linetype = Source), linewidth = 1)+
   scale_linetype_manual(values = c("HFC/HMD/UNWPP" = "solid","SOCSIM" = "11")) +
-  facetted_pos_scales(y = list(ASFR = scale_y_continuous(),
-                               ASMR =  scale_y_continuous(trans = "log10")))+
+  facetted_pos_scales(y = list(ASMR =  scale_y_continuous(trans = "log10")))+
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   labs(title = paste0("Age-Specific Mortality rates of Men in Norway"),
        subtitle = paste0("Retrieved from HMD and a SOCSIM simulation \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, "\n alpha = ", alpha, ", beta = ", beta, " (", seed, "), estimation time: ", round(duration, 2), " mins"), 
