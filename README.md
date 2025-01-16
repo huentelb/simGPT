@@ -46,7 +46,9 @@ Before you start with the microsimulation, please adjust the [setup](setup.R). W
 6. Folder name (usually your working directory)
 
 ### 3. Microsimulation (to build synthetic population register)
-1. Convert input data into monthly rates using [functions.R](functions.R)
+*The code to run all the remaining steps is included in [simgpt_DEL.R](simgpt_DEL.R).*
+
+1. First, you convert input data into monthly rates using [functions.R](functions.R) which is started from within [simgpt_DEL.R](simgpt_DEL.R).
 2. You could adjust the microsimulation settings in the [supfile](socsim_NOR.sup). For our current output we go with the following setting:
     - Birth interval: 9
     - No fertility heterogeneity
