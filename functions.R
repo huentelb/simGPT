@@ -32,7 +32,7 @@ write_socsim_rates_HFD <- function(Country) {
            ASFR_mo = ASFR/12) %>% 
     select(-ASFR)
   
-  # Add rows with rates = 0 for ages 0-14 and 51-111
+  # Add rows with rates = 0 for ages 0-14 and 51-101
   ASFR <- 
     ASFR %>% 
     group_by(Year) %>% 
@@ -45,7 +45,7 @@ write_socsim_rates_HFD <- function(Country) {
     group_split() %>% 
     map_df(~ add_row(.x, 
                      Year = unique(.x$Year), 
-                     Age = 51, Age_up = 111, Month = 0, ASFR_mo = 0.0, 
+                     Age = 51, Age_up = 101, Month = 0, ASFR_mo = 0.0, 
                      .after = 38)) %>%  # Highest age_up - lowest age + 1
     ungroup() %>% 
     select(-Age)
