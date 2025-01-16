@@ -29,7 +29,7 @@ write_socsim_rates_HMD(Country = "NOR")
 
 ## CREATE INITIAL POPULATION AND MARRIAGE FILES
 # Set size of initial population
-size_opop <-  25000
+size_opop <-  10000
 
 # Create data.frame with 14 columns and nrows = size_opop
 presim.opop <- setNames(data.frame(matrix(data = 0, ncol = 14, nrow = size_opop)), 
@@ -76,6 +76,9 @@ rsocsim::socsim(folder, supfile, seed, process_method = "future")
 # Record ending time
 end <- Sys.time()
 
+# Store duration
+duration <- end - start
+
 ## IMPORT OUTPUTS TO R
 # Read the opop file using the read_opop function
 opop <- rsocsim::read_opop(folder = getwd(), supfile = supfile, 
@@ -88,7 +91,7 @@ omar <- rsocsim::read_omar(folder = getwd(), supfile = supfile,
 
 
 
-## ESTIMATE AGE-SPECIFIC RATES FROM SIMULATED DATA
+## ESTIMATE AGE-SPECIFIC RATES FROM SIMULATED DATA (5-year intervals)
 # Estimate age-specific fertility rates
 asfr_sim <- rsocsim::estimate_fertility_rates(opop = opop,
                                               final_sim_year = 2100, #[Jan-Dec]
@@ -111,6 +114,7 @@ asmr_sim <- rsocsim::estimate_mortality_rates(opop = opop,
 
 
 ## COMPARE SIMULATED RATES TO INPUT RATES
+
 # FERTILITY
 
 # Extract year and age breaks used in the estimate_fertility_rates() to apply the same values to HFD data
@@ -142,7 +146,7 @@ HFD <- HFD %>%
   group_by(year, age) %>%
   summarise(ASFR = mean(ASFR)) %>%
   ungroup() %>%
-  mutate(Source = "HFD/HMD", 
+  mutate(Source = "HFC/HMD/UNWPP", 
          Rate = "ASFR")
 
 
@@ -154,17 +158,9 @@ SocsimF <- asfr_sim %>%
 
 yrs_plot <- c("[1850,1855)", "[1880,1885)", "[1910,1915)", "[1940,1945)", "[1970,1975)", "[2000,2005)", "[2020,2025)") 
 
-# HFD %>% 
-#   filter(year %in% yrs_plot) %>% 
-#   ggplot(aes(age, ASFR, group = year, color = year)) +
-#   geom_line() 
-# 
-# SocsimF %>% 
-#   filter(year %in% yrs_plot) %>% 
-#   ggplot(aes(age, ASFR, group = year, color = year)) +
-#   geom_line() 
 
 # MORTALITY
+
 # Extract year and age breaks used in the estimate_mortality_rates() to apply the same values to HMD data
 # Year breaks. Extract all the unique numbers from the intervals 
 year_breaks_mort <- unique(as.numeric(str_extract_all(asmr_sim$year, "\\d+", simplify = T)))
@@ -201,7 +197,7 @@ HMD <- ltf %>%
   group_by(year, Sex, age) %>% 
   summarise(mx = mean(mx)) %>%
   ungroup() %>% 
-  mutate(Source = "HFD/HMD",
+  mutate(Source = "HFC/HMD/UNWPP",
          Rate = "ASMR")
 
 # Wrangle SOCSIM data
@@ -212,58 +208,16 @@ SocsimM <- asmr_sim %>%
          Rate = "ASMR") %>% 
   select(year, Sex, age,  mx, Source, Rate)
 
-yrs_plot <- c("[1850,1851)", "[1880,1881)", "[1910,1911)", "[1940,1941)", "[1970,1971)", "[2000,2001)", "[2020,2021)") 
+# yrs_plot <- c("[1850,1851)", "[1880,1881)", "[1910,1911)", "[1940,1941)", "[1970,1971)", "[2000,2001)", "[2020,2021)") 
 yrs_plot <- c("[1850,1855)", "[1880,1885)", "[1910,1915)", "[1940,1945)", "[1970,1975)", "[2050,2055)", "[2020,2025)", "[2095,2100)") 
 
-# HMD22 <- 
-#   HMD %>% 
-#   filter(year == "[2021,2022)" | year == "[2020,2021)" | year =="[2022,2023)",
-#          Sex == "Female")
-# 
-# Socsim22 <- 
-#   SocsimM %>% 
-#   filter(year == "[2021,2022)" | year == "[2020,2021)" | year =="[2022,2023)",
-#          Sex == "Female")
 
-SocsimM %>% 
-  filter(year %in% yrs_plot,
-         Sex == "Male") %>% 
-  filter(mx != 0 & !is.infinite(mx) & !is.nan(mx)) %>% 
-  ggplot(aes(age, mx, group = year, color = year)) +
-  geom_line() +
-  scale_y_continuous(trans = "log10") +
-  labs(title = "Male (Input)")
-
-HMD %>% 
-  filter(year %in% yrs_plot,
-         Sex == "Male") %>% 
-  ggplot(aes(age, mx, group = year, color = year)) +
-  geom_line() +
-  scale_y_continuous(trans = "log10") +
-  labs(title = "Male (Input)")
-
-
-SocsimM %>% 
-  filter(year %in% yrs_plot,
-         Sex == "Female") %>% 
-  ggplot(aes(age, mx, group = year, color = year)) +
-  geom_line() +
-  scale_y_continuous(trans = "log10") +
-  labs(title = "Female (SOCSIM)")
-
-SocsimM %>% 
-  filter(year %in% yrs_plot,
-         Sex == "Male") %>% 
-  ggplot(aes(age, mx, group = year, color = year)) +
-  geom_line() +
-  scale_y_continuous(trans = "log10") +
-  labs(title = "Male (SOCSIM)")
 
 
 ## PLOT SIMULATED AND INPUT DATA TOGETHER
 
 # create folder to store graphs
-graph.folder <- paste0(folder,"/sim_results_", supfile, "_",seed,"_/graphs/")# Check if the folder already exists
+graph.folder <- paste0(folder,"/sim_results_", supfile, "_",seed,"_/graphs/") # Check if the folder already exists
 if (!dir.exists(graph.folder)) {
   # If not, create the new folder
   dir.create(graph.folder)
@@ -272,13 +226,13 @@ if (!dir.exists(graph.folder)) {
   cat("Folder already exists:", graph.folder, "\n")
 }
 
-## Plotting ASFR and ASMR (for females) from HFD/HMD vs SOCSIM 
+## Plotting ASFR and ASMR (for females) from HFC/HMD/UNWPP vs SOCSIM 
 yrs_plot <- c("[1850,1855)", "[1880,1885)", "[1910,1915)", "[1940,1945)", "[1970,1975)", "[2050,2055)", "[2020,2025)", "[2095,2100)") 
 
 # Get the age levels to define them before plotting and avoid wrong order
 age_levels <- levels(asmr_sim$age)
 
-png(file = paste0(graph.folder,"rates.png"),
+png(file = paste0(graph.folder,"rates_f.png"),
     width = 964, height = 556)
 bind_rows(HFD %>% rename(Estimate = ASFR), 
           SocsimF %>% rename(Estimate = ASFR)) %>% 
@@ -293,23 +247,44 @@ bind_rows(HFD %>% rename(Estimate = ASFR),
   ggplot(aes(x = age, y = Estimate, group = interaction(year, Source)))+
   facet_wrap(. ~ Rate, scales = "free") + 
   geom_line(aes(colour = year, linetype = Source), linewidth = 1)+
-  scale_linetype_manual(values = c("HFD/HMD" = "solid","SOCSIM" = "11")) +
+  scale_linetype_manual(values = c("HFC/HMD/UNWPP" = "solid","SOCSIM" = "11")) +
   facetted_pos_scales(y = list(ASFR = scale_y_continuous(),
                                ASMR =  scale_y_continuous(trans = "log10")))+
   scale_x_discrete(guide = guide_axis(angle = 90)) +
-  labs(title = paste0("Age-Specific Fertility and Mortality rates in Norway (1846-2022) 
-       \n retrieved from HFD, HFC, HMD and a SOCSIM simulation 
-       \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, 
-                      "\n alpha = ", alpha, ", beta = ", beta, " (", seed, ")"), 
+  labs(title = paste0("Age-Specific Fertility and Mortality rates of Women in Norway"),
+       subtitle = paste0("Retrieved from HFC, HMD and a SOCSIM simulation \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, "\n alpha = ", alpha, ", beta = ", beta, " (", seed, "), estimation time: ", round(duration, 2), " mins"), 
+       x = "Age") + 
+  theme_bw()
+dev.off()
+
+png(file = paste0(graph.folder,"rates_m.png"),
+    width = 964, height = 556)
+bind_rows(HMD %>% rename(Estimate = mx),
+          SocsimM %>% rename(Estimate = mx)) %>% 
+  # Filter rates of 0, infinite (N_Deaths/0_Pop) and NaN (0_Deaths/0_Pop) values
+  filter(Estimate != 0 & !is.infinite(Estimate) & !is.nan(Estimate)) %>% 
+  filter(Sex == "Male") %>% 
+  mutate(age = factor(as.character(age), levels = age_levels)) %>%
+  filter(year %in% yrs_plot) %>% 
+  ggplot(aes(x = age, y = Estimate, group = interaction(year, Source)))+
+  facet_wrap(. ~ Rate, scales = "free") + 
+  geom_line(aes(colour = year, linetype = Source), linewidth = 1)+
+  scale_linetype_manual(values = c("HFC/HMD/UNWPP" = "solid","SOCSIM" = "11")) +
+  facetted_pos_scales(y = list(ASFR = scale_y_continuous(),
+                               ASMR =  scale_y_continuous(trans = "log10")))+
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  labs(title = paste0("Age-Specific Fertility and Mortality rates of Men in Norway"),
+       subtitle = paste0("Retrieved from HFC, HMD and a SOCSIM simulation \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, "\n alpha = ", alpha, ", beta = ", beta, " (", seed, "), estimation time: ", round(duration, 2), " mins"), 
        x = "Age") + 
   theme_bw()
 dev.off()
 
 
-## GETTING ESTIMATES -- IDENTIFY KIN!
 
-#Use the final simulation year (January-December)
-#and the last simulated month to convert our monthly dates into yearly ones
+## GETTING ESTIMATES -- IDENTIFY KIN! ####
+
+# Use the final simulation year (January-December)
+# and the last simulated month to convert our monthly dates into yearly ones
 asYr <- function(month, last_month=last_month, final_sim_year=final_sim_year) {
   return(final_sim_year - trunc((last_month - month)/12))
 }
@@ -323,10 +298,10 @@ asYr <- function(month, last_month=last_month, final_sim_year=final_sim_year) {
 # omar <- rsocsim::read_omar(folder = getwd(), supfile = "socsim_NOR.sup", 
 #                            seed = seed, suffix = "",  fn = NULL)
 
-#Parameters specific to this simulation: will need to be changed
+# Parameters specific to this simulation: will need to be changed
 last_month <- max(opop$dob) # Last simulated month
 
-#Cleaning our population file
+# Cleaning our population file
 opop <- opop %>% 
   #Fixing dates of death for individuals still living at the end
   mutate(dod = if_else(dod == 0, last_month, dod)) %>%
@@ -597,10 +572,15 @@ gp <- left_join(gp, sample)
 
 save(gp, file = paste0(folder,"/sim_results_", supfile, "_",seed,"_/gp",cohort,max_age,".RData"))
 
+}
 
-#### MERGE MULTIPLE SIMULATION OUTPUT ####
-load(paste0(folder, "/sim_results_", supfile, "_2403082_/gp00.RData"))
-gp_2 <- gp
+#### MERGE MULTIPLE SIMULATION OUTPUTS ####
+
+load(paste0(folder, "/sim_results_", supfile, "_",base_seed,"1_/gp00.RData"))
+gp_1 <- gp
+
+#### CONTINUE HERE!!! ####
+
 load(paste0(folder, "/sim_results_", supfile, "_2403083_/gp00.RData"))
 gp_3 <- gp
 load(paste0(folder, "/sim_results_", supfile, "_2403084_/gp00.RData"))
