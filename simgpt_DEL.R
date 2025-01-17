@@ -330,8 +330,9 @@ max_age <- 100 # (for censoring of life courses)
 
 # Select sample (based on birth cohort)
 sample <- opop %>% 
-  # keep if born in 1953
-  filter(dob_year == cohort)  
+  # keep if born in 1953    
+  # & survived at least to first birthday (may produce inconsistent SA results if not)
+  filter(dob_year == cohort & (dod_year - dob_year > 0) 
 
 #### PARENTS ####
 ## Build register containing death dates for parents for sample individuals
@@ -489,10 +490,7 @@ gp_base <- gp_help %>%
   mutate(pdage = dod_year_p - dob_year,
          cage = dob_year_c - dob_year,
          gcage = dob_year_gc - dob_year,
-         dage = dod_year - dob_year) %>% 
-  # filter those who died before reaching age 1 (dage = 0); 
-  # may produce inconsistent SA results
-  filter(dage > 1 | is.na(dage))
+         dage = dod_year - dob_year) 
 
 
 ## Average age at family transitions
