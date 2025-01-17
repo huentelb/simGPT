@@ -332,7 +332,7 @@ max_age <- 100 # (for censoring of life courses)
 sample <- opop %>% 
   # keep if born in 1953    
   # & survived at least to first birthday (may produce inconsistent SA results if not)
-  filter(dob_year == cohort & (dod_year - dob_year > 0) 
+  filter(dob_year == cohort & (dod_year - dob_year > 0))
 
 #### PARENTS ####
 ## Build register containing death dates for parents for sample individuals
