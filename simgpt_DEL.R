@@ -68,7 +68,7 @@ for (i in c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) {
 
 # Automatically set a new seed for each simulation in i based on base_seed
   seed <- paste0(base_seed,i)
-}
+
 
 # Record starting time 
 start <- Sys.time()
