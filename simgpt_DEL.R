@@ -61,7 +61,9 @@ write.table(presim.omar, "presim.omar", row.names = F, col.names = F)
 
 
 ## RUN SOCSIM SIMULATION
-for (i in c(1, 1)) {
+
+# start loop for simulation rounds
+for (i in c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) {
 
 
 # Automatically set a new seed for each simulation in i based on base_seed
@@ -327,9 +329,12 @@ library(data.table)
 library(dtplyr)
 library(dplyr, warn.conflicts = FALSE)
 
+# Start loop for selecting different cohorts
+for (c in c(1953, 2000)) {
+
 # Set selected cohort and maximum age to be displayed in SA
-# size of 2000 birth cohort: 59,234
-cohort = 2000
+# size of 2000 birth cohort in Norway: 59,234
+cohort <- c
 max_age <- 100 # (for censoring of life courses)
 
 # Select sample (based on birth cohort)
@@ -587,6 +592,10 @@ gp <- left_join(gp, sample)
 
 save(gp, file = paste0(folder,"/sim_results_", supfile, "_",seed,"_/gp",cohort,max_age,".RData"))
 
+# end cohort selection loop
+}
+
+# end simulation round loop
 }
 
 #### MERGE MULTIPLE SIMULATION OUTPUTS ####
