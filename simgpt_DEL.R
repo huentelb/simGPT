@@ -577,6 +577,7 @@ gp <- gp_wide %>%
     TRUE ~ as.character(.)
   )))
 
+# add other demographic information from sample individuals plus family to gp-dataframe
 gp <- left_join(gp, lateparent)
 gp <- left_join(gp, oldestc)
 gp <- left_join(gp, oldestgc)
