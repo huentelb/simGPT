@@ -234,48 +234,52 @@ age_levels <- levels(asmr_sim$age)
 
 png(file = paste0(graph.folder,"rates_f.png"),
     width = 964, height = 556)
-bind_rows(HFD %>% rename(Estimate = ASFR), 
-          SocsimF %>% rename(Estimate = ASFR)) %>% 
-  mutate(Sex = "Female") %>%   
-  bind_rows(HMD %>% rename(Estimate = mx),
-            SocsimM %>% rename(Estimate = mx)) %>% 
-  # Filter rates of 0, infinite (N_Deaths/0_Pop) and NaN (0_Deaths/0_Pop) values
-  filter(Estimate != 0 & !is.infinite(Estimate) & !is.nan(Estimate)) %>% 
-  filter(Sex == "Female") %>% 
-  mutate(age = factor(as.character(age), levels = age_levels)) %>%
-  filter(year %in% yrs_plot) %>% 
-  ggplot(aes(x = age, y = Estimate, group = interaction(year, Source)))+
-  facet_wrap(. ~ Rate, scales = "free") + 
-  geom_line(aes(colour = year, linetype = Source), linewidth = 1)+
-  scale_linetype_manual(values = c("HFC/HMD/UNWPP" = "solid","SOCSIM" = "11")) +
-  facetted_pos_scales(y = list(ASFR = scale_y_continuous(),
-                               ASMR =  scale_y_continuous(trans = "log10")))+
-  scale_x_discrete(guide = guide_axis(angle = 90)) +
-  labs(title = paste0("Age-Specific Fertility and Mortality rates of Women in Norway"),
-       subtitle = paste0("Retrieved from HFC, HMD and a SOCSIM simulation \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, "\n alpha = ", alpha, ", beta = ", beta, " (", seed, "), estimation time: ", round(duration, 2), " hours"), 
-       x = "Age") + 
-  theme_bw()
+print(
+  bind_rows(HFD %>% rename(Estimate = ASFR), 
+            SocsimF %>% rename(Estimate = ASFR)) %>% 
+    mutate(Sex = "Female") %>%   
+    bind_rows(HMD %>% rename(Estimate = mx),
+              SocsimM %>% rename(Estimate = mx)) %>% 
+    # Filter rates of 0, infinite (N_Deaths/0_Pop) and NaN (0_Deaths/0_Pop) values
+    filter(Estimate != 0 & !is.infinite(Estimate) & !is.nan(Estimate)) %>% 
+    filter(Sex == "Female") %>% 
+    mutate(age = factor(as.character(age), levels = age_levels)) %>%
+    filter(year %in% yrs_plot) %>% 
+    ggplot(aes(x = age, y = Estimate, group = interaction(year, Source)))+
+    facet_wrap(. ~ Rate, scales = "free") + 
+    geom_line(aes(colour = year, linetype = Source), linewidth = 1)+
+    scale_linetype_manual(values = c("HFC/HMD/UNWPP" = "solid","SOCSIM" = "11")) +
+    facetted_pos_scales(y = list(ASFR = scale_y_continuous(),
+                                 ASMR =  scale_y_continuous(trans = "log10")))+
+    scale_x_discrete(guide = guide_axis(angle = 90)) +
+    labs(title = paste0("Age-Specific Fertility and Mortality rates of Women in Norway"),
+         subtitle = paste0("Retrieved from HFC, HMD and a SOCSIM simulation \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, "\n alpha = ", alpha, ", beta = ", beta, " (", seed, "), estimation time: ", round(duration, 2), " hours"), 
+         x = "Age") + 
+    theme_bw()
+  )
 dev.off()
 
 png(file = paste0(graph.folder,"rates_m.png"),
     width = 564, height = 556)
-bind_rows(HMD %>% rename(Estimate = mx),
-          SocsimM %>% rename(Estimate = mx)) %>% 
-  # Filter rates of 0, infinite (N_Deaths/0_Pop) and NaN (0_Deaths/0_Pop) values
-  filter(Estimate != 0 & !is.infinite(Estimate) & !is.nan(Estimate)) %>% 
-  filter(Sex == "Male") %>% 
-  mutate(age = factor(as.character(age), levels = age_levels)) %>%
-  filter(year %in% yrs_plot) %>% 
-  ggplot(aes(x = age, y = Estimate, group = interaction(year, Source)))+
-  facet_wrap(. ~ Rate, scales = "free") + 
-  geom_line(aes(colour = year, linetype = Source), linewidth = 1)+
-  scale_linetype_manual(values = c("HFC/HMD/UNWPP" = "solid","SOCSIM" = "11")) +
-  facetted_pos_scales(y = list(ASMR =  scale_y_continuous(trans = "log10")))+
-  scale_x_discrete(guide = guide_axis(angle = 90)) +
-  labs(title = paste0("Age-Specific Mortality rates of Men in Norway"),
-       subtitle = paste0("Retrieved from HMD and a SOCSIM simulation \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, "\n alpha = ", alpha, ", beta = ", beta, " (", seed, "), estimation time: ", round(duration, 2), " hours"), 
-       x = "Age") + 
-  theme_bw()
+print(
+  bind_rows(HMD %>% rename(Estimate = mx),
+            SocsimM %>% rename(Estimate = mx)) %>% 
+    # Filter rates of 0, infinite (N_Deaths/0_Pop) and NaN (0_Deaths/0_Pop) values
+    filter(Estimate != 0 & !is.infinite(Estimate) & !is.nan(Estimate)) %>% 
+    filter(Sex == "Male") %>% 
+    mutate(age = factor(as.character(age), levels = age_levels)) %>%
+    filter(year %in% yrs_plot) %>% 
+    ggplot(aes(x = age, y = Estimate, group = interaction(year, Source)))+
+    facet_wrap(. ~ Rate, scales = "free") + 
+    geom_line(aes(colour = year, linetype = Source), linewidth = 1)+
+    scale_linetype_manual(values = c("HFC/HMD/UNWPP" = "solid","SOCSIM" = "11")) +
+    facetted_pos_scales(y = list(ASMR =  scale_y_continuous(trans = "log10")))+
+    scale_x_discrete(guide = guide_axis(angle = 90)) +
+    labs(title = paste0("Age-Specific Mortality rates of Men in Norway"),
+         subtitle = paste0("Retrieved from HMD and a SOCSIM simulation \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, "\n alpha = ", alpha, ", beta = ", beta, " (", seed, "), estimation time: ", round(duration, 2), " hours"), 
+         x = "Age") + 
+    theme_bw()
+  )
 dev.off()
 
 
