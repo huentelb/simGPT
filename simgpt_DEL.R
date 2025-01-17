@@ -77,7 +77,7 @@ rsocsim::socsim(folder, supfile, seed, process_method = "future")
 end <- Sys.time()
 
 # Store duration
-duration <- end - start
+duration <- difftime(end, start, unit = "hours")
 
 ## IMPORT OUTPUTS TO R
 # Read the opop file using the read_opop function
@@ -252,13 +252,13 @@ bind_rows(HFD %>% rename(Estimate = ASFR),
                                ASMR =  scale_y_continuous(trans = "log10")))+
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   labs(title = paste0("Age-Specific Fertility and Mortality rates of Women in Norway"),
-       subtitle = paste0("Retrieved from HFC, HMD and a SOCSIM simulation \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, "\n alpha = ", alpha, ", beta = ", beta, " (", seed, "), estimation time: ", round(duration, 2), " mins"), 
+       subtitle = paste0("Retrieved from HFC, HMD and a SOCSIM simulation \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, "\n alpha = ", alpha, ", beta = ", beta, " (", seed, "), estimation time: ", round(duration, 2), " hours"), 
        x = "Age") + 
   theme_bw()
 dev.off()
 
 png(file = paste0(graph.folder,"rates_m.png"),
-    width = 964, height = 556)
+    width = 564, height = 556)
 bind_rows(HMD %>% rename(Estimate = mx),
           SocsimM %>% rename(Estimate = mx)) %>% 
   # Filter rates of 0, infinite (N_Deaths/0_Pop) and NaN (0_Deaths/0_Pop) values
@@ -273,7 +273,7 @@ bind_rows(HMD %>% rename(Estimate = mx),
   facetted_pos_scales(y = list(ASMR =  scale_y_continuous(trans = "log10")))+
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   labs(title = paste0("Age-Specific Mortality rates of Men in Norway"),
-       subtitle = paste0("Retrieved from HMD and a SOCSIM simulation \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, "\n alpha = ", alpha, ", beta = ", beta, " (", seed, "), estimation time: ", round(duration, 2), " mins"), 
+       subtitle = paste0("Retrieved from HMD and a SOCSIM simulation \n ", het," heterogeneous fertility, ", bint,  ", opop size = ", size_opop, "\n alpha = ", alpha, ", beta = ", beta, " (", seed, "), estimation time: ", round(duration, 2), " hours"), 
        x = "Age") + 
   theme_bw()
 dev.off()
@@ -316,10 +316,6 @@ save(opop, file = paste0(folder,"/sim_results_", supfile, "_",seed,"_/opop.RData
 
 ## PREPARATION SEQUENCE ANALYSIS ##
 
-#### PARENTS ####
-## Build register containing death dates for parents for sample individuals (born 1953 and alive in 2019)
-
-
 # load simulated register data
 load(paste0(folder, "/sim_results_", supfile, "_", seed, "_/opop.RData"))
 
@@ -332,10 +328,15 @@ library(dplyr, warn.conflicts = FALSE)
 cohort = 2000
 max_age <- 100 # (for censoring of life courses)
 
+# Select sample (based on birth cohort)
 sample <- opop %>% 
   # keep if born in 1953
   filter(dob_year == cohort)  
 
+#### PARENTS ####
+## Build register containing death dates for parents for sample individuals
+
+# 1. Register containing mother ids and their vital dates
 mothers <- sample %>% 
   # join to mother identifier (mom) in sample (left) data from opop (right) 
   left_join(opop, by = c("mom" = "pid"), suffix = c("", "_p"), keep = TRUE) %>% 
@@ -343,8 +344,9 @@ mothers <- sample %>%
   select(pid, mom, pop, pid_p, dod_year_p) %>% 
   mutate(mother = 1)
 
+# 2. Register containing father ids and their vital dates
 fathers <- sample %>% 
-  # join to father identifier (mom) in sample (left) data from opop (right) 
+  # join to father identifier (pop) in sample (left) data from opop (right) 
   left_join(opop, by = c("pop" = "pid"), suffix = c("", "_p"), keep = TRUE) %>% 
   # keep original variables plus parental death years 
   select(pid, mom, pop, pid_p, dod_year_p) %>% 
@@ -355,12 +357,17 @@ parents <- bind_rows(mothers, fathers)
 # ascending order by pid
 parents <- arrange(parents, pid)
 
-## Select parent who died last
+
+## Build register containing the parent who died last
 lateparent <- parents %>% 
   group_by(pid) %>% 
   slice_max(dod_year_p, with_ties = FALSE) %>% 
   ungroup %>% 
-  # set dead_p (parent died during observation period) to 0 if died after end of obs period (=cohort+max_age)
+  # drop id of parent who died first
+  dplyr::select(pid, pid_p, dod_year_p, mother) %>% 
+  
+  # generate indicator if parent has died during observation period (dead_p)
+  # set dead_p to 0 if died after end of obs period (=cohort+max_age)
   # useful if life course is censored (e.g., for benchmarking against empirical register)
   mutate(dead_p = ifelse(dod_year_p > cohort+max_age, 0, 1))
 
@@ -372,9 +379,10 @@ lateparent <- parents %>%
 children_f <- sample %>% 
   # select females
   filter(fem == 1) %>% 
-  # merge sample vars (pid) to sample via sample individuals who became mothers 
+  # merge children's vars to the sample individuals who became their mothers
+  # i.e. sample individual's id 'pid' equals the samples children's mother id 'mom'
   left_join(opop, by = c("pid" = "mom"), suffix = c("", "_c"), keep = TRUE) %>% 
-  # keep original variables plus child birth and death years 
+  # keep original variables plus child birth- and death-years 
   select(pid,  
          pid_c, fem_c, mom_c, pop_c, dob_year_c, dod_year_c)
       
@@ -382,9 +390,10 @@ children_f <- sample %>%
 children_p <- sample %>% 
   # select males
   filter(fem == 0) %>% 
-  # merge sample vars (pid) to sample via sample individuals who became fathers 
+  # merge children's vars to the sample individuals who became their fathers
+  # i.e. sample individual's id 'pid' equals the samples children's father id 'pop'
   left_join(opop, by = c("pid" = "pop"), suffix = c("", "_c"), keep = TRUE) %>% 
-  # keep original variables plus child birth and death years 
+  # keep original variables plus child birth- and death-years 
   select(pid,  
          pid_c, fem_c, mom_c, pop_c, dob_year_c, dod_year_c) 
 
@@ -401,11 +410,12 @@ nochildren <- children %>%
 ## Build register containing oldest child of sample individuals
 oldestc <- children %>%
   group_by(pid) %>% 
-  # add number of all children per sample individual
+  # add number of all children per sample individual before deleting younger siblings
   add_count(pid, name = "numkids") %>% 
   # select child that was born first (do not allow multiple choices per sample individual)
   slice_min(dob_year_c, with_ties = FALSE) %>%
   ungroup() %>% 
+  # set numkids to NA if person has no children (i.e. child's yob is NA)
   mutate(numkids = ifelse(is.na(dob_year_c), NA, numkids)) 
 
 
@@ -413,9 +423,10 @@ oldestc <- children %>%
 #### GRANDCHILDREN ####
 ## Build register containing children of FEMALE children --> sample's grandchildren
 gchildren_f <- children %>% 
-  # select females
+  # select female children
   filter(fem_c == 1) %>% 
-  # merge sample vars (pid_c) to sample via children who became mothers 
+  # merge grandchildren's vars to the sample's daughters who became their mothers
+  # i.e. sample children's id 'pid_c' equals the sample grandchildren's mother id 'mom'
   left_join(opop, by = c("pid_c" = "mom"), suffix = c("", "_gc"), keep = TRUE) %>% 
   # rename grandchild variables by adding suffix _gc
   rename(mom_gc = mom) %>% 
@@ -428,11 +439,12 @@ gchildren_f <- children %>%
          pid_gc, mom_gc, pop_gc, fem_gc, dob_year_gc, dod_year_gc)
 
 
-## Build register containing children of MALE sample individuals
+## Build register containing children of MALE children --> sample's grandchildren
 gchildren_p <- children %>% 
-  # select females
+  # select male childre
   filter(fem_c == 0) %>% 
-  # merge sample vars (pid_c) to sample via children who became fathers 
+  # merge grandchildren's vars to the sample's sons who became their fathers
+  # i.e. sample children's id 'pid_c' equals the sample grandchildren's father id 'pop'
   left_join(opop, by = c("pid_c" = "pop"), suffix = c("", "_gc"), keep = TRUE) %>% 
   # rename grandchild variables by adding suffix _gc
   rename(mom_gc = mom) %>% 
@@ -457,6 +469,7 @@ oldestgc <- gchildren %>%
   # select child that was born first
   slice_min(dob_year_gc, with_ties = FALSE) %>%
   ungroup() %>% 
+  # set numgkids to NA if person has no grandchildren (i.e. grandchild's yob is NA)
   mutate(numgkids = ifelse(is.na(dob_year_gc), NA, numgkids)) 
 
 #### ONE FAMILY ROOSTER ####
@@ -464,10 +477,10 @@ gp_help <- left_join(sample, lateparent)
 gp_help <- left_join(gp_help, oldestc)
 gp_help <- left_join(gp_help, oldestgc)
 
-# ...with most basic info
+# ...only with info needed for generating the generational placement trajectories
 gp_base <- gp_help %>% 
   select(pid, dob_year, dod_year, dod_year_p, dob_year_c, dob_year_gc) %>% 
-  # right-censor at age 100 (that's when register is censored)
+  # right-censor at age 100 (that's when register is censored) 
   mutate(dod_year_p = ifelse(dod_year_p > cohort+max_age, NA, dod_year_p),
          dob_year_c = ifelse(dob_year_c > cohort+max_age, NA, dob_year_c),
          dob_year_gc = ifelse(dob_year_gc > cohort+max_age, NA, dob_year_gc),
@@ -477,7 +490,7 @@ gp_base <- gp_help %>%
          cage = dob_year_c - dob_year,
          gcage = dob_year_gc - dob_year,
          dage = dod_year - dob_year) %>% 
-  # filter those who died in same year they were born (dage = 0); 
+  # filter those who died before reaching age 1 (dage = 0); 
   # may produce inconsistent SA results
   filter(dage > 1 | is.na(dage))
 
