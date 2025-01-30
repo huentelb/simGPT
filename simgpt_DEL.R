@@ -1,3 +1,13 @@
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# RUN MICROSIMULATION
+# AND GENERATE SYNTHETIC POP REGISTERS FOR BIRTH COHORTS 1953 AND 2000
+
+# huenteler@demogr.mpg.de
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 ## LOAD / INSTALL NECESSARY PACKAGES
 
@@ -18,18 +28,16 @@ library(rsocsim)
 source("functions.R")
 
 # convert HFD data to SOCSIM format
-write_socsim_rates_HFD(Country = "NOR")
+# write_socsim_rates_HFD(Country = "NOR")
 
 #convert HMD data to SOCSIM format
-write_socsim_rates_HMD(Country = "NOR")
+# write_socsim_rates_HMD(Country = "NOR")
 
 
 #### SIMULATION ####
 
 
 ## CREATE INITIAL POPULATION AND MARRIAGE FILES
-# Set size of initial population
-size_opop <-  10000
 
 # Create data.frame with 14 columns and nrows = size_opop
 presim.opop <- setNames(data.frame(matrix(data = 0, ncol = 14, nrow = size_opop)), 
@@ -319,7 +327,6 @@ save(opop, file = paste0(folder,"/sim_results_", supfile, "_",seed,"_/opop.RData
 
 
 
-
 ## PREPARATION SEQUENCE ANALYSIS ##
 
 # load simulated register data
@@ -332,10 +339,19 @@ library(dplyr, warn.conflicts = FALSE)
 # Start loop for selecting different cohorts
 for (c in c(1953, 2000)) {
 
-# Set selected cohort and maximum age to be displayed in SA
-# size of 2000 birth cohort in Norway: 59,234
-cohort <- c
-max_age <- 100 # (for censoring of life courses)
+  # Start loop for selecting different maximum ages depending on selected cohort
+  if (c == 1953) {
+    a_values <- c(66, 100)  # 1953 cohort: Run code for both max ages (1. for benchmarking, 2. for projection)
+  } else if (c == 2000) {
+    a_values <- c(100)  # 2000 cohort: Run code only for max age = 100 (for projection)
+  }
+  
+  for (a in a_values) {
+    # Set selected cohort and maximum age to be analysed in SA
+    # size of 2000 birth cohort in Norway: 59,234
+    cohort <- c
+    max_age <- a  # (for censoring of life courses and calculating correct proportions)
+    
 
 # Select sample (based on birth cohort)
 sample <- opop %>% 
@@ -421,6 +437,8 @@ nochildren <- children %>%
 oldestc <- children %>%
   group_by(pid) %>% 
   # add number of all children per sample individual before deleting younger siblings
+  # but only keep those children who were born until end of observation
+  filter(dob_year_c <= cohort+max_age) %>% 
   add_count(pid, name = "numkids") %>% 
   # select child that was born first (do not allow multiple choices per sample individual)
   slice_min(dob_year_c, with_ties = FALSE) %>%
@@ -474,13 +492,18 @@ gchildren <- arrange(gchildren, pid)
 ## Build register containing oldest child of sample individuals
 oldestgc <- gchildren %>%
   group_by(pid) %>% 
-  # add number of all children per sample individual
+  # add number of all grandchildren per sample individual before deleting younger siblings
+  # but only keep those children who were born until end of observation
+  filter(dob_year_gc <= cohort+max_age) %>% 
   add_count(pid, name = "numgkids") %>% 
   # select child that was born first
   slice_min(dob_year_gc, with_ties = FALSE) %>%
   ungroup() %>% 
   # set numgkids to NA if person has no grandchildren (i.e. grandchild's yob is NA)
   mutate(numgkids = ifelse(is.na(dob_year_gc), NA, numgkids)) 
+
+
+
 
 #### ONE FAMILY ROOSTER ####
 gp_help <- left_join(sample, lateparent)
@@ -592,444 +615,14 @@ gp <- left_join(gp, sample)
 
 save(gp, file = paste0(folder,"/sim_results_", supfile, "_",seed,"_/gp",cohort,max_age,".RData"))
 
+# end max_age loop
+}
+
 # end cohort selection loop
 }
 
 # end simulation round loop
 }
 
-#### MERGE MULTIPLE SIMULATION OUTPUTS ####
-
-load(paste0(folder, "/sim_results_", supfile, "_",base_seed,"1_/gp00.RData"))
-gp_1 <- gp
-
-#### CONTINUE HERE!!! ####
-
-load(paste0(folder, "/sim_results_", supfile, "_2403083_/gp00.RData"))
-gp_3 <- gp
-load(paste0(folder, "/sim_results_", supfile, "_2403084_/gp00.RData"))
-gp_4 <- gp
-
-gp <- rbind(gp_2, gp_3, gp_4)
-
-save(gp, file = paste0(folder,"/sim_results_", supfile, "_",seed,"4_/gp00.RData"))
-
-load(paste0(folder, "/sim_results_", supfile, "_2403084_/gp00.RData"))
-
-# create folder to store graphs
-graph.folder <- paste0(folder,"/sim_results_", supfile, "_",seed,"_/graphs/",cohort,"_",max_age,"/")# Check if the folder already exists
-if (!dir.exists(graph.folder)) {
-  # If not, create the new folder
-  dir.create(graph.folder)
-  cat("Folder created:", graph.folder, "\n")
-} else {
-  cat("Folder already exists:", graph.folder, "\n")
-}
-
-
-#### SEQUENCE ANALYSIS ####
-library(foreign)
-library(TraMineR)
-library(TraMineRextras)
-library(WeightedCluster)
-library(RColorBrewer)
-library(bookdown)
-
-# Define characteristics of sequences
-
-# Alphabet, ie all possible states
-gpalpha <- c("P1C0G0", "P0C0G0", 
-             "P1C1G0", "P0C1G0", 
-             "P1C1G1", "P0C1G1")
-
-# Labels of states
-gplabels <- c("child", "no ancestors/descentants",
-              "child and parent", "parent",
-              "child, parent, and grandparent", 
-              "parent and grandparent")
-
-# Short labels for states
-gpstates <-c("G1G2", "G2",
-             "G1G2G3", "G2G3",
-             "G1G2G3G4", "G2G3G4")
-
-# Color palette
-cblind <- brewer.pal(6, "RdBu")
-
-
-# Define sequence object using the above characteristics
-seq <- seqdef(gp, 6:106, 
-              labels = gplabels,  
-              cnames = ages, 
-              tick.last = TRUE, 
-              xtstep = 5, 
-              cpal = cblind, 
-              alphabet = gpalpha, 
-              states = gpstates,
-              missing = "D", right = "DEL")
-
-table(gp$gp_99)
-# Plot state distribution of life course
-#seqIplot(seq, border = NA, ltext = c(gpstates), with.legend = FALSE)
-png(file = paste0(graph.folder, "seqD_full.png"),
-    width=964, height=556)
-seqdplot(seq, border = NA, ltext = c(gpstates), with.legend = FALSE, 
-         main = paste0("Simulated Data \n (1846 - ",cohort+max_age,", ",cohort," birth cohort), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop), 
-         missing.color = "#f7f7f7", with.missing = T)
-dev.off()
-
-
-png(file = paste0(graph.folder, "seqI_full.png"),
-    width=964, height=556)
-seqIplot(seq, border = NA, ltext = c(gpstates), with.legend = FALSE, 
-         main = paste0("Simulated Data \n (1846 - ",cohort+max_age,", ",cohort," birth cohort), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop), 
-                       missing.color = "#f7f7f7")
-dev.off()
-
-png(file = paste0(graph.folder, "seqi100_full.png"),
-    width=964, height=556)
-seqiplot(seq, border = NA, ltext = c(gpstates), with.legend = FALSE, 
-         main = paste0("Simulated Data \n (1846 - ",cohort+max_age,", ",cohort," birth cohort), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop), 
-         missing.color = "#f7f7f7", idxs = 1:100)
-dev.off()
-
-
-# Meantime in general pop
-seqmeant(seq)
-png(file = paste0(graph.folder, "meant_full.png"),
-    width=964, height=556)
-seqmtplot(seq, border = NA, ltext = c(gpstates), with.legend = FALSE, 
-         main = paste0("Simulated Data \n (1846 - ",cohort+max_age,", ",cohort," birth cohort), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop))
-dev.off()
-
-
-
-#### CLUSTER ANALYSIS ####
-
-# 1. Generate dissimilarity matrix
-
-# Chi2 distance
-# Chi2 distance with number of periods *K* set to length of sequence 
-# --> makes Chi2 to a "position-wise" Chi2-measure, sensitive to timing (similar to HAM)
-chi <- seqdist(seq, method = "CHI2", step = max(seqlength(seq)))
-
-# OM distance with transition rate based costs
-#omt <- seqdist(seq, method = "OM", indel = 1, sm = "TRATE")
-
-# OM distance with constant costs
-#omc <- seqdist(seq, method = "OM", indel = 1, sm = "CONSTANT")
-
-
-# 2. Clustering
-
-# 2a. Hierarchical clustering using WARD (1-10 clusters)
-chi_ward <- hclust(as.dist(chi), method = "ward.D")
-#omt_ward <- hclust(as.dist(omt), method = "ward.D")
-#omc_ward <- hclust(as.dist(omc), method = "ward.D")
-
-chi_ward10 <- as.clustrange(chi_ward, diss = chi, ncluster = 10)
-chiWard.qual <- chi_ward10
-plot(chiWard.qual, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2)
-
-# omt_ward10 <- as.clustrange(omt_ward, diss = chi, ncluster = 10)
-# omtWard.qual <- omt_ward10
-# plot(omtWard.qual, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2)
-# 
-# omc_ward10 <- as.clustrange(omc_ward, diss = chi, ncluster = 10)
-# omcWard.qual <- omc_ward10
-# plot(omcWard.qual, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2)
-
-# 2b. Partitioning around medoids
-# PAM + Ward (as starting point)
-
-chi_pam10 <- wcKMedRange(chi,
-                         kvals = 2:10,
-                         initialclust = chi_ward)
-
-# Plot cluster quality
-png(file = paste0(graph.folder, "clustqual.png"),
-    width=964, height=556)
-plot(chi_pam10, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2, 
-     main = paste0("Simulated data, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
-                   "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"))
-dev.off()
-summary(chi_pam10, max.rank = 3)
-
-# omt_pam10 <- wcKMedRange(omt,
-#                          kvals = 2:10,
-#                          initialclust = omt_ward)
-# plot(omt_pam10, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2)
-# summary(omt_pam10, max.rank = 3)
-# 
-# omc_pam10 <- wcKMedRange(omc,
-#                          kvals = 2:10,
-#                          initialclust = omc_ward)
-# plot(omc_pam10, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2)
-# summary(omc_pam10, max.rank = 3)
-
-
-#### D plots ####
-# State distribution plots by clusters
-# CHI2
-
-w = 2000
-h = 1250
-
-png(file = paste0(graph.folder, "seqD_4.png"),
-    width=w, height=h)
-seqdplot(seq, group = chi_pam10$clustering$cluster4, 
-         border = NA, ltext = c(gpstates), with.legend = FALSE, cex.axis = 2,
-         main = paste0("Chi PAM: 4 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-         missing.color = "#f7f7f7")
-dev.off()
-
-png(file = paste0(graph.folder, "seqD_5.png"),
-    width=w, height=h)
-seqdplot(seq, group = chi_pam10$clustering$cluster5,
-         border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
-         main = paste0("Chi PAM: 5 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-         missing.color = "#f7f7f7")
-dev.off()
-
-png(file = paste0(graph.folder, "seqD_6.png"),
-    width=w, height=h)
-seqdplot(seq, group = chi_pam10$clustering$cluster6,
-        border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
-        main = paste0("Chi PAM: 6 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                      "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-        missing.color = "#f7f7f7")
-dev.off()
-
-png(file = paste0(graph.folder, "seqD_7.png"),
-    width=w, height=h)
-seqdplot(seq, group = chi_pam10$clustering$cluster6,
-         border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
-         main = paste0("Chi PAM: 7 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-         missing.color = "#f7f7f7")
-dev.off()
-
-#### F plots ####
-png(file = paste0(graph.folder, "seqF20_4.png"),
-    width=w, height=h)
-seqfplot(seq, group = chi_pam10$clustering$cluster4,
-         border = NA, ltext = c(gpstates),  with.legend = FALSE, cex.axis = 2,
-         main = paste0("Chi PAM: 4 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-         missing.color = "#f7f7f7", idxs = 1:20)
-dev.off()
-
-png(file = paste0(graph.folder, "seqF20_5.png"),
-    width=w, height=h)
-seqfplot(seq, group = chi_pam10$clustering$cluster5,
-         border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
-         main = paste0("Chi PAM: 5 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-         missing.color = "#f7f7f7", idxs = 1:20)
-dev.off()
-
-png(file = paste0(graph.folder, "seqF20_6.png"),
-    width=w, height=h)
-seqfplot(seq, group = chi_pam10$clustering$cluster6,
-         border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
-         main = paste0("Chi PAM: 6 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-         missing.color = "#f7f7f7", idxs = 1:20)
-dev.off()
-
-png(file = paste0(graph.folder, "seqF20_7.png"),
-    width=w, height=h)
-seqfplot(seq, group = chi_pam10$clustering$cluster7,
-         border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
-         main = paste0("Chi PAM: 7 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-         missing.color = "#f7f7f7", idxs = 1:20)
-dev.off()
-
-# OM trate
-# seqdplot(seq, group = omt_pam10$clustering$cluster4,
-#          border = NA, ltext = c(gpstates), main = "OM trate PAM: 4 Clusters")
-# 
-# seqdplot(seq, group = omt_pam10$clustering$cluster5,
-#          border = NA, ltext = c(gpstates), main = "OM trate PAM: 5 Clusters")
-# 
-# seqdplot(seq, group = omt_pam10$clustering$cluster6,
-#          border = NA, ltext = c(gpstates), main = "OM trate PAM: 6 Clusters")
-
-# OM constant
-# seqdplot(seq, group = omc_pam10$clustering$cluster4,
-#          border = NA, ltext = c(gpstates), main = "OM constant PAM: 4 Clusters")
-# 
-# seqdplot(seq, group = omc_pam10$clustering$cluster5,
-#          border = NA, ltext = c(gpstates), main = "OM constant PAM: 5 Clusters")
-# 
-# seqdplot(seq, group = omc_pam10$clustering$cluster6,
-#          border = NA, ltext = c(gpstates), main = "OM constant PAM: 6 Clusters")
-
-
-
-
-
-# Mean time spent in each state by cluster
-by(seq, chi_pam10$clustering$cluster5, seqmeant)
-png(file = paste0(graph.folder, "mean_plot_6.png"),
-    width=964, height=556)
-seqmtplot(seq, group = chi_pam10$clustering$cluster6, border = NA,
-          ltext = c(gpstates), main = paste0("Chi Ward: 6 Clusters sim. ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                                             "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-          missing.color = "#f7f7f7", with.legend = FALSE)
-dev.off()
-
-png(file = paste0(graph.folder, "mean_plot_5.png"),
-    width=964, height=556)
-seqmtplot(seq, group = chi_pam10$clustering$cluster5, border = NA,
-          ltext = c(gpstates), main = paste0("Chi Ward: 5 Clusters sim. ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                                             "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-          missing.color = "#f7f7f7")
-dev.off()
-
-#### LABELLED GRAPH FOR OPTIMAL CLUSTER SOLUTION ####
-
-# We extract X clusters and re-label them from 1 to X to replace the medoid identifiers
-
-# identify medoids sorted by frequency
-mc <- chi_pam10$clustering$cluster5
-med <- as.data.frame(sort(table(mc), decreasing = TRUE))
-med1 <- as.character(med[1,1])
-med2 <- as.character(med[2,1])
-med3 <- as.character(med[3,1])
-med4 <- as.character(med[4,1])
-med5 <- as.character(med[5,1])
-# med6 <- as.character(med[6,1])
-# med7 <- as.character(med[7,1])
-# create factor containing medioids incl labels
-mc.factor <- factor(mc, levels = c(med1, med2, med3, med4, med5),
-                    as.character("1","2","3","4","5"),
-                    labels = c("Cluster 1 -\n 3-gen family",
-                               "Cluster 2 -\n Childless",
-                               "Cluster 3 -\n 4-gen family",
-                               "Cluster 4 -\n 3-gen (via 2-gen) family",
-                               "Cluster 5 -\n 2-gen family"))
-
-# attach to dataframe to use as weights in plots
-gp$chi <- mc.factor
-
-# generate new sequence object 
-# seqchi <- seqdef(gp, 6:106,
-#                  labels = gplabels,  
-#                  cnames = ages, 
-#                  tick.last = TRUE, 
-#                  xtstep = 5, 
-#                  cpal = cblind, 
-#                  alphabet = gpalpha, 
-#                  states = gpstates,
-#                  missing = "D", right = "DEL")
-
-# different plots with labels
-png(file = paste0(graph.folder, "seqD_5_lab.png"),
-    width=w, height=h)
-seqdplot(seq, group = group.p(gp$chi), border = NA,
-         ltext = gpstates, with.legend = FALSE, cex.axis = 2,
-         main = paste0("Simulated data, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
-                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"))
-dev.off()
-
-png(file = paste0(graph.folder, "seqI_5_lab.png"),
-    width=w, height=h)
-seqIplot(seq, group = group.p(gp$chi), border = NA,
-         ltext = gpstates, with.legend = FALSE, cex.axis = 2,
-         main = paste0("Simulated data, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
-                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-         missing.color = "#f7f7f7")
-dev.off()
-
-png(file = paste0(graph.folder, "seqf20_5_lab.png"),
-    width=w, height=h)
-seqfplot(seq, group = group.p(gp$chi), border = NA,
-         ltext = gpstates, with.legend = FALSE, cex.axis = 2,
-         main = paste0("Simulated data, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
-                       "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-         missing.color = "#f7f7f7", idxs = 1:20)
-dev.off()
-
-png(file = paste0(graph.folder, "mean_plot_5_lab.png"),
-    width=w, height=h)
-seqmtplot(seq, group = group.p(gp$chi), border = NA,
-          ltext = c(gpstates), 
-          main = paste0("Simulated data, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
-                        "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-          missing.color = "#f7f7f7", with.legend = FALSE)
-dev.off()
-
-png(file = paste0(graph.folder, "seqr_5_lab.png"),
-    width=w, height=h)
-seqrplot(seq, group = group.p(gp$chi), border = NA,
-          ltext = c(gpstates), 
-          main = paste0("Simulated data, ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop, 
-                        "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", seed, ")"),
-          missing.color = "#f7f7f7", with.legend = FALSE, diss = chi)
-dev.off()
-
-# seqfplot(seqchi, group = group.p(gp$chi), idxs = 1:50,
-#          ltext = gpstates, use.layout = TRUE, cex.legend = 1.2,
-#          ylab = NA, yaxis = FALSE, border = NA)
-# 
-# seqiplot(seqchi, group = group.p(gp$chi), idxs = 1:500,
-#          ltext = gpstates, use.layout = TRUE, cex.legend = 1.2, space = 0,
-#          ylab = NA, yaxis = FALSE)
-
-# cross-sectional entropy plot
-# seqHtplot(seqchi, group = group.p(gp$chi),
-#          ltext = gpstates)
-
-#### TABLES ####
-library(gtsummary)
-library(vtable)
-
-# merge parent alive until end of observation, number of kids and number of grandkids to data
-# clusters <- left_join(gp, lateparent)
-# clusters <- left_join(clusters, oldestc)
-# clusters <- left_join(clusters, oldestgc)
-# clusters <- left_join(clusters, sample)
-
-
-descr <- gp %>% 
-  select(pid, dage, pdage, cage, gcage, chi, dead_p, numkids, numgkids, fem, mstat) %>% 
-  # set (grand)parent status to 0 if number of (grand)kids missing, 1 otherwise
-  mutate(isparent = ifelse(is.na(numkids), 0, 1),
-         isgparent = ifelse(is.na(numgkids), 0, 1)) %>% 
-  # convert marital status var to factor
-  mutate(mstat = factor(mstat, levels = c(1:4),
-            labels = c("Single",
-                       "Divorced",
-                       "Widowed",
-                       "Married"))) 
-
-# Save dataframe for comparing with other simulations later
-# save(descr, file = paste0(folder, "/sim_results_", supfile, "_", seed, "_/sumfile_",seed,".RData"))
-# dev.off()
-
-# Descriptive table using sumtable
-
-st(descr, 
-   vars = c("isparent", "numkids", "cage", 
-            "isgparent", "numgkids", "gcage", 
-            "dead_p", "pdage",
-            "fem", "mstat", "dage"),
-   summ=c("mean(x)",
-          "sd(x)"),
-   summ.names = c("Mean",
-                  "Std.Dev"),
-   group = "chi", 
-   group.test =TRUE,
-   labels = c(paste0("Parent at age ", max_age), "Number of children", "Age at birth of first child",
-              paste0("Grandparent at age ", max_age), "Number of grandchildren", "Age at birth of first grandchild",
-              paste0("Both parents dead at age ", max_age), "Age at death of second parent", 
-              "Female", "Marital status", "Age at own death"),
-   title = paste0("Summary Statistics (Simulated data, ", het, " heterogeneous fertility, ", bint,  ", opop size = ", seed, ")"),
-   out = "csv",
-   file = paste0(graph.folder, "sumtable_5"))
 
 
