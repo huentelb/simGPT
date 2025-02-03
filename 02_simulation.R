@@ -336,6 +336,7 @@ library(data.table)
 library(dtplyr)
 library(dplyr, warn.conflicts = FALSE)
 
+
 # Start loop for selecting different cohorts
 for (c in c(1953, 2000)) {
 
@@ -444,7 +445,12 @@ oldestc <- children %>%
   slice_min(dob_year_c, with_ties = FALSE) %>%
   ungroup() %>% 
   # set numkids to NA if person has no children (i.e. child's yob is NA)
-  mutate(numkids = ifelse(is.na(dob_year_c), NA, numkids)) 
+  mutate(numkids = ifelse(is.na(dob_year_c), NA, numkids)) %>% 
+  # generate indicator for share of parents (isparent)
+  # set isparent to 0 if first child born after end of obs period (=cohort+max_age)
+  # useful if life course is censored (e.g., for benchmarking against empirical register)
+  mutate(isparent = ifelse(dob_year_c > cohort+max_age, 0, 1))
+
 
 
 
@@ -500,7 +506,15 @@ oldestgc <- gchildren %>%
   slice_min(dob_year_gc, with_ties = FALSE) %>%
   ungroup() %>% 
   # set numgkids to NA if person has no grandchildren (i.e. grandchild's yob is NA)
-  mutate(numgkids = ifelse(is.na(dob_year_gc), NA, numgkids)) 
+  mutate(numgkids = ifelse(is.na(dob_year_gc), NA, numgkids)) %>% 
+  # generate indicator for share of grandparents (isgparent)
+  # set isgparent to 0 if first grandchild born after end of obs period (=cohort+max_age)
+  # useful if life course is censored (e.g., for benchmarking against empirical register)
+ 
+  
+  ## CONTINUE HERE!!
+   mutate(isgparent = ifelse(dob_year_gc > cohort+max_age, 0, 1))
+
 
 
 
@@ -613,6 +627,13 @@ gp <- left_join(gp, oldestc)
 gp <- left_join(gp, oldestgc)
 gp <- left_join(gp, sample)
 
+# generate indicators for share of (grand)parents
+gp <- gp %>% 
+  mutate(numkids = ifelse(is.na(numkids), 0, numkids),
+         isparent = ifelse(numkids > 0, 1, 0),
+         numgkids = ifelse(is.na(numgkids), 0, numgkids),
+         isgparent = ifelse(numgkids > 0, 1, 0))
+
 save(gp, file = paste0(folder,"/sim_results_", supfile, "_",seed,"_/gp",cohort,max_age,".RData"))
 
 # end max_age loop
@@ -626,3 +647,4 @@ save(gp, file = paste0(folder,"/sim_results_", supfile, "_",seed,"_/gp",cohort,m
 
 
 
+### last line ###
