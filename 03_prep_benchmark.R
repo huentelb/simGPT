@@ -2,14 +2,14 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # PREPARE DATA AND GENERATE SEQUENCE ANALYSIS OUTPUT FOR BENCHMARKING
-# 1953 BIRTH COHORT - AGE RANGE 0-67 
+# 1960 BIRTH COHORT - AGE RANGE 0-67 
 
 # huenteler@demogr.mpg.de
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-cohort <- 1953
-max_age <- 66
+cohort <- 1960
+max_age <- 59
 ages <- as.character(c(0:max_age))
 
 # Generate folders to store results
@@ -37,12 +37,12 @@ if (!dir.exists(graph.folder)) {
 
 
 
-#### MERGE MULTIPLE SIMULATION OUTPUTS FOR 1953 COHORT ####
+#### MERGE MULTIPLE SIMULATION OUTPUTS FOR 1960 COHORT ####
 
 # load the gp-data for from each simulation
 for (i in c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) {
 
-load(paste0(folder, "/sim_results_", supfile, "_",base_seed,i,"_/gp195366.RData"))
+load(paste0(folder, "/sim_results_", supfile, "_",base_seed,i,"_/gp196059.RData"))
 assign(paste0("gp_", i), gp)  
 
 }
@@ -50,11 +50,8 @@ assign(paste0("gp_", i), gp)
 # merge the simulations into one gp-dataframe
 gp <- rbind(gp_1, gp_2, gp_3, gp_4, gp_5, gp_6, gp_7, gp_8, gp_9, gp_10)
 
-# add new variable "group" to the df for later comparison with empirical data
-gp <- cbind(gp, group = 1)
-
 # store combined gp dataframe in base_seed folder
-save(gp, file = paste0(folder.baseseed, "gp195366.RData"))
+save(gp, file = paste0(folder.baseseed, "gp196059.RData"))
 
 
 

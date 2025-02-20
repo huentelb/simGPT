@@ -2,7 +2,7 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # RUN MICROSIMULATION
-# AND GENERATE SYNTHETIC POP REGISTERS FOR BIRTH COHORTS 1953 AND 2000
+# AND GENERATE SYNTHETIC POP REGISTERS FOR BIRTH COHORTS 1960 AND 2000
 
 # huenteler@demogr.mpg.de
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -328,7 +328,13 @@ save(opop, file = paste0(folder,"/sim_results_", supfile, "_",seed,"_/opop.RData
 
 
 ## PREPARATION SEQUENCE ANALYSIS ##
-
+# start loop for simulation rounds
+for (i in c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) {
+  
+  
+  # Automatically set a new seed for each simulation in i based on base_seed
+  seed <- paste0(base_seed,i)
+  
 # load simulated register data
 load(paste0(folder, "/sim_results_", supfile, "_", seed, "_/opop.RData"))
 
@@ -338,11 +344,11 @@ library(dplyr, warn.conflicts = FALSE)
 
 
 # Start loop for selecting different cohorts
-for (c in c(1953, 2000)) {
+for (c in c(1960, 2000)) {
 
   # Start loop for selecting different maximum ages depending on selected cohort
-  if (c == 1953) {
-    a_values <- c(66, 100)  # 1953 cohort: Run code for both max ages (1. for benchmarking, 2. for projection)
+  if (c == 1960) {
+    a_values <- c(59, 100)  # 1960 cohort: Run code for both max ages (1. for benchmarking, 2. for projection)
   } else if (c == 2000) {
     a_values <- c(100)  # 2000 cohort: Run code only for max age = 100 (for projection)
   }
@@ -356,7 +362,7 @@ for (c in c(1953, 2000)) {
 
 # Select sample (based on birth cohort)
 sample <- opop %>% 
-  # keep if born in 1953    
+  # keep if born in 1960    
   # & survived at least to first birthday (may produce inconsistent SA results if not)
   filter(dob_year == cohort & (dod_year - dob_year > 0))
 
