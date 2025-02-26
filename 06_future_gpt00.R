@@ -392,17 +392,116 @@ seqrplot(seq, group = group.p(gp$chi), border = NA,
          missing.color = "#f7f7f7", with.legend = FALSE, diss = chi)
 dev.off()
 
-# seqfplot(seqchi, group = group.p(gp$chi), idxs = 1:50,
-#          ltext = gpstates, use.layout = TRUE, cex.legend = 1.2,
-#          ylab = NA, yaxis = FALSE, border = NA)
-# 
-# seqiplot(seqchi, group = group.p(gp$chi), idxs = 1:500,
-#          ltext = gpstates, use.layout = TRUE, cex.legend = 1.2, space = 0,
-#          ylab = NA, yaxis = FALSE)
 
-# cross-sectional entropy plot
-# seqHtplot(seqchi, group = group.p(gp$chi),
-#          ltext = gpstates)
+
+### Relative frequency plot ####
+
+# Check different parameters against theoretically most reasonable: CHI2
+# Sorting on the first MDS factor extracted from a dissimilarity matrix built using the CHI-square
+
+# Sample random n=5,000 cases & define sequence object (analysis does not work with full dataset)
+set.seed(2407)
+testgp <- sample_n(gp, 5000)
+testseq <- seqdef(testgp, 6:paste0(max_age+6), # for max_age 100 to column 106, for max_age 66 to column 72
+                  labels = gplabels,  
+                  cnames = ages, 
+                  tick.last = TRUE, 
+                  xtstep = 5, 
+                  cpal = cblind, 
+                  alphabet = gpalpha, 
+                  states = gpstates,
+                  missing = "D", right = "DEL")
+
+
+# 1) CHI2 distance
+testchi <- seqdist(testseq, method = "CHI2", step = max(seqlength(testseq)))
+
+# Select medoids based on distance
+srfchi <- seqrf(testseq,
+                diss = testchi,
+                sortv = "mds",
+                grp.meth = "first")
+
+# RF plot: 
+# Plot all k = 100 medoids + average distance of repr. sequences to medoid
+plot(srfchi, which.plot = "both")
+# summary(srfchi)
+
+# For sequence index plot in order of RF plot: 
+# a. Assign representing medoid to each sequence (medoid_id)
+testgp <- testgp %>% 
+  mutate(medoid_id = srfchi[["rf"]][["kmedoid.index"]])
+
+# b. Sort medoid_id according to order of rfplot
+testgp <- testgp %>% 
+  mutate(medoid_id = factor(medoid_id, levels = srfchi[["rf"]][["medoids"]]))
+
+
+# c. seqIplot sorted by medoid_id
+seqIplot(testseq, border = NA,
+         ltext = c(gpstates), 
+         missing.color = "#f7f7f7", with.legend = FALSE,
+         sortv = testgp$medoid_id)
+
+
+# RFplot by clusters
+seqrfplot(testseq, group = group.p(testgp$chi), 
+          diss = testchi,
+          sortv = "mds", 
+          ltext = gpstates, use.layout = TRUE, cex.legend = 1.2,
+          ylab = NA, yaxis = FALSE, border = NA, with.legend = FALSE)
+
+# seqIplot by clusters sorted by medoid_id
+seqIplot(testseq, group = group.p(testgp$chi),
+         ltext = gpstates, use.layout = TRUE, cex.legend = 1.2,
+         ylab = NA, yaxis = FALSE, border = NA, with.legend = FALSE,
+         sortv = testgp$medoid_id)
+
+
+
+# 2) OM distance with transition rate based costs
+omt <- seqdist(testseq, method = "OM", indel = 1, sm = "TRATE")
+
+# Select medoids based on distance
+srfomt <- seqrf(testseq,
+                diss = omt,
+                sortv = "mds",
+                grp.meth = "first")
+
+# RF plot: 
+# Plot all k = 100 medoids + average distance of repr. sequences to medoid
+plot(srfomt, which.plot = "both")
+
+
+# For sequence index plot in order of RF plot: 
+# a. Assign representing medoid to each sequence (medoid_id)
+testgp <- testgp %>% 
+  mutate(medoid_id = srfomt[["rf"]][["kmedoid.index"]])
+
+# b. Sort medoid_id according to order of rfplot
+testgp <- testgp %>% 
+  mutate(medoid_id = factor(medoid_id, levels = srfomt[["rf"]][["medoids"]]))
+
+# c. seqIplot sorted by medoid_id
+seqIplot(testseq, border = NA,
+         ltext = c(gpstates), 
+         missing.color = "#f7f7f7", with.legend = FALSE,
+         sortv = testgp$medoid_id)
+
+
+# RFplot by clusters
+seqrfplot(testseq, group = group.p(testgp$chi), 
+          diss = omt,
+          sortv = "mds", 
+          ltext = gpstates, use.layout = TRUE, cex.legend = 1.2,
+          ylab = NA, yaxis = FALSE, border = NA, with.legend = FALSE)
+
+# seqIplot by clusters sorted by medoid_id
+seqIplot(testseq, group = group.p(testgp$chi),
+         ltext = gpstates, use.layout = TRUE, cex.legend = 1.2,
+         ylab = NA, yaxis = FALSE, border = NA, with.legend = FALSE,
+         sortv = testgp$medoid_id)
+
 
 
 
