@@ -33,24 +33,26 @@ The HMD data contain the period (1x1) life tables by sex ([fltper_1x1.txt](Input
 
 The UNWPP data come in a different format than the HFC/HFD and HMD data. You can find the code to adjust the UNWPP data to the format of the HFC/HFD and HMD data as well as to append it to the time series of these past time series in the [unwpp_convert.R](unwpp_convert.R) file. You do not need to run it because these data are already stored in the repository, too. 
 
-*The simulations are based on the following data (1846-2100 time series, 1x1), stored in [Input](Input)*
+*The simulations of the main analysis are based on the following data (1846-2100 time series, 1x1), stored in [Input](Input)*
 * Fertility: [NORasfrRR_med.txt](Input/NORasfrRR_med.txt)
 * Female mortality: [fltper_1x1_med.txt](Input/fltper_1x1_med.txt)
 * Male mortality: [mltper_1x1_med.txt](Input/mltper_1x1_med.txt)
+
+* In the appendix, we present results based on simulations with the *high fertility scenario* and the *low fertility scenario*.
 
 ### 2. Set up before you start
 Before you start with the microsimulation, please adjust the [setup](setup.R). We have automated many of the storing or labelling processes in the code. Therefore, you should check whether the information provided in the setup matches the simulation-specification etc. that you will be using. You should pay attention to the following options you can set:
 
 *Note: If you leave the code as is provided here, you only need to adjust (4) the base seed and (5) your working directory!*
 1. Working directory
-2. Names of the input files (no need to change, usually)
+2. Names of the input files (no need to change for the main analysis)
 3. Name of the [supfile](socsim_NOR.sup) (contains settings for microsimulation)
 4. Specifications you will use in the supfile (fertility heterogeneity, birth interval, alpha and beta) so that output will contain correct info. (*Important: changing things here will not change anything about the settings of the microsimulation; the information here is only for labelling correctly! If you want to adjust the microsimulation settings, go to the [supfile](socsim_NOR.sup))*
 5. Base seed (within the code, we will run i different simulations that will then automatically be starting with the base_seed + i. This will create one output folder for each i simulation)
 6. Folder name (usually your working directory)
 
 ### 3. Microsimulation (to build synthetic population register)
-*The code to run all the remaining steps is included in [simgpt_DEL.R](simgpt_DEL.R).*
+*The code to run all the following steps (3. and 4.) is included in [02_simulation.R](02_simulation.R).*
 
 1. First, you convert input data into monthly rates using [functions.R](functions.R) which is started from within [simgpt_DEL.R](simgpt_DEL.R).
 2. You could adjust the microsimulation settings in the [supfile](socsim_NOR.sup). For our current output we go with the following setting:
@@ -59,9 +61,17 @@ Before you start with the microsimulation, please adjust the [setup](setup.R). W
       - Therefore, no option to set alpha and beta
     - Run rates from 1846 for 100 years (1200 months) before starting to move forward in time
     - Initial population size = 10,000 (not in supfile but in the main code)
+3. Compare input to simulation rates on the aggregate level. To this end, the code creates to graphs (stored in your simulation round's subfolder 'graphs') that compare the age-specific mortality (both sexes) and fertility (only female) rates across different periods. 
 
+### 4. Build dataframes to analyse generational placement trajectories (GPT)
+Based on each simulation, you create a dataframe containing the GPT for different subsamples (initiated by a loop varying the birth cohort and age ranges considered):
+- *gp196059RData*: 1960 cohort, age range 0 to 59: for benchmarking against empirical register data
+- *gp1960100RData*: 1960 cohort, age range 0 to 100: for projection into the future
+- *gp2000100RData*: 2000 cohort, age range 0 to 100: for projection into the future.
 
-### 4. Build dataset to analyse generational placement trajectories
+These dataframes are stored in your simulation-subfolders based on *base seed* and simulation round *i*. 
+
+The GPT-dataframes follow these steps to define the GPT:
 1. Identify parents and focal's age when the second parent died
 2. Identify children and focal's age when the first child was born
 3. Identify grandchildren and focal's age when the first grandchild was born
@@ -70,6 +80,7 @@ Before you start with the microsimulation, please adjust the [setup](setup.R). W
     - One column for each age of focal containing their generational placement
     - Focal's generational placement can range from being dead to having all respective kin alive at the same time
 
+*(Needs update)*
 ### 5. Run sequence and cluster analysis
 1. Define individual sequences, i.e. our generational placement trajectories
     - with option "DEL" to delete the positions containing missing values = focal is dead to replace the missing values. See Gabadinho et al. (2010) for more details on the options for handling missing values when defining sequence objects.
