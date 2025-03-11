@@ -8,7 +8,7 @@ To reproduce, have the following packages installed:
 ## This is the output we want to produce
 1. Synthetic population register of individuals living in Norway in which we can link parents to their children.
 2. Generational placement patterns (see [Hünteler, 2022](https://www.sciencedirect.com/science/article/pii/S104026082100054X)) from ages 0 to 100 for the birth cohorts
-    - 1953: for benchmarking against existing historical register data, and
+    - 1960: for benchmarking against existing historical register data, and
     - 2000: for projecting generational placement trajectories into the future. 
 
 ## This is how we do it
