@@ -486,6 +486,8 @@ seqIplot(testseq, border = NA,
 
 
 #### RFplot by clusters ####
+w <- 7
+h <- 7
 
 # generate one RF plot per cluster
 # store gp dataframes per cluster
@@ -527,7 +529,7 @@ srfchi1 <- seqrf(seq1,
                 sortv = "mds",
                 grp.meth = "first")
 
-png(file = paste0(graph.folder, "seqrf_c1.png"),
+pdf(file = paste0(graph.folder, "seqrf_c1.pdf"),
     width=w, height=h)
 plot(srfchi1, which.plot = "both", main = l1)
 dev.off()
@@ -552,7 +554,7 @@ srfchi2 <- seqrf(seq2,
                  sortv = "mds",
                  grp.meth = "first")
 
-png(file = paste0(graph.folder, "seqrf_c2.png"),
+pdf(file = paste0(graph.folder, "seqrf_c2.pdf"),
     width=w, height=h)
 plot(srfchi2, which.plot = "both", main = l2)
 dev.off()
@@ -578,7 +580,7 @@ srfchi3 <- seqrf(seq3,
                  sortv = "mds",
                  grp.meth = "first")
 
-png(file = paste0(graph.folder, "seqrf_c3.png"),
+pdf(file = paste0(graph.folder, "seqrf_c3.pdf"),
     width=w, height=h)
 plot(srfchi3, which.plot = "both", main = l3)
 dev.off()
@@ -604,7 +606,7 @@ srfchi4 <- seqrf(seq4,
                  sortv = "mds",
                  grp.meth = "first")
 
-png(file = paste0(graph.folder, "seqrf_c4.png"),
+pdf(file = paste0(graph.folder, "seqrf_c4.pdf"),
     width=w, height=h)
 plot(srfchi4, which.plot = "both", main = l4)
 dev.off()
@@ -629,7 +631,7 @@ srfchi5 <- seqrf(seq5,
                  sortv = "mds",
                  grp.meth = "first")
 
-png(file = paste0(graph.folder, "seqrf_c5.png"),
+pdf(file = paste0(graph.folder, "seqrf_c5.pdf"),
     width=w, height=h)
 plot(srfchi5, which.plot = "both", main = l5)
 dev.off()
@@ -655,7 +657,7 @@ srfchi6 <- seqrf(seq6,
                  sortv = "mds",
                  grp.meth = "first")
 
-png(file = paste0(graph.folder, "seqrf_c6.png"),
+pdf(file = paste0(graph.folder, "seqrf_c6.pdf"),
     width=w, height=h)
 plot(srfchi6, which.plot = "both", main = l6)
 dev.off()
@@ -667,7 +669,11 @@ h <- 600
 
 # png(file = paste0(graph.folder, "seqrf_cluster6.png"),
 #     width=w, height=h)
-pdf(paste0(graph.folder, "seqrf_cluster6.pdf"), width = 8, height = 6)  # Open PDF device
+pdf(paste0(graph.folder, "seqrf_cluster6.pdf"), 
+    width = 8, height = 6)
+
+original_par <- par(no.readonly = TRUE) # store original current parameter
+
 par(mfrow = c(3, 2), # 3 rows, 2 columns
     mar = c(3.5, 2, 3 , 2), # margins of each plot
     mgp = c(2, 1, 0)) # margins around axis title, axis labels, and axis line
@@ -678,9 +684,38 @@ plot(srfchi4, which.plot = "medoids", skipar = TRUE, main = l4, cex.main = 1, in
 plot(srfchi5, which.plot = "medoids", skipar = TRUE, main = l5, cex.main = 1, info = "none", xlab = "Age")
 plot(srfchi6, which.plot = "medoids", skipar = TRUE, main = l6, cex.main = 1, info = "none", xlab = "Age")
 dev.off()
-par(mfrow = c(1, 1)) # reset layout
+par(original_par) # reset layout
 
 
+pdf(paste0(graph.folder, "seqrf_both_cluster6.pdf"), 
+    width = 8, height = 9)
+par(mfrow = c(3, 4), # 3 rows, 4 columns
+    mar = c(3.5, 2, 3 , 2), # margins of each plot
+    mgp = c(2, 1, 0)) # margins around axis title, axis labels, and axis line
+plot(srfchi1, which.plot = "medoids", skipar = TRUE, main = l1, cex.main = 1.1, info = "none")
+plot(srfchi1, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
+
+plot(srfchi2, which.plot = "medoids", skipar = TRUE, main = l2, cex.main = 1.1, info = "none")
+plot(srfchi2, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
+
+plot(srfchi3, which.plot = "medoids", skipar = TRUE, main = l3, cex.main = 1.1, info = "none")
+plot(srfchi3, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
+
+plot(srfchi4, which.plot = "medoids", skipar = TRUE, main = l4, cex.main = 1.1, info = "none")
+plot(srfchi4, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
+
+plot(srfchi5, which.plot = "medoids", skipar = TRUE, main = l5, cex.main = 1.1, info = "none", xlab = "Age")
+plot(srfchi5, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
+
+plot(srfchi6, which.plot = "medoids", skipar = TRUE, main = l6, cex.main = 1.1, info = "none", xlab = "Age")
+plot(srfchi6, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
+dev.off()
+par(original_par) # reset layout
+
+
+#### RFplot with OM ####
+w <- 7
+h <- 7
 
 # 2) OM distance with transition rate based costs (to see if OMdistance based RF better represent all sequences)
 omt <- seqdist(testseq, method = "OM", indel = 1, sm = "TRATE")
@@ -712,34 +747,161 @@ seqIplot(testseq, border = NA,
          sortv = testgp$medoid_id)
 
 
-# RFplot by clusters
-seqrfplot(testseq, group = group.p(testgp$chi), 
-          diss = omt,
-          sortv = "mds", 
-          ltext = gpstates, use.layout = TRUE, cex.legend = 1.2,
-          ylab = NA, yaxis = FALSE, border = NA, with.legend = FALSE)
+# Cluster 1
+# OM distance
+omt1 <- seqdist(seq1, method = "OM", indel = 1, sm = "TRATE")
 
-# seqIplot by clusters sorted by medoid_id
-seqIplot(testseq, group = group.p(testgp$chi),
-          ltext = gpstates, use.layout = TRUE, cex.legend = 1.2,
-          ylab = NA, yaxis = FALSE, border = NA, with.legend = FALSE,
-          sortv = testgp$medoid_id)
+# Select medoids based on distance
+srfomt1 <- seqrf(seq1,
+                 diss = omt1,
+                 sortv = "mds",
+                 grp.meth = "first")
+
+pdf(file = paste0(graph.folder, "seqrf_om_c1.pdf"),
+    width=w, height=h)
+plot(srfomt1, which.plot = "both", main = l1)
+dev.off()
+
+# Cluster 2
+# OM distance
+omt2 <- seqdist(seq2, method = "OM", indel = 1, sm = "TRATE")
+
+# Select medoids based on distance
+srfomt2 <- seqrf(seq2,
+                 diss = omt2,
+                 sortv = "mds",
+                 grp.meth = "first")
+
+pdf(file = paste0(graph.folder, "seqrf_om_c2.pdf"),
+    width=w, height=h)
+plot(srfomt2, which.plot = "both", main = l2)
+dev.off()
+
+
+# Cluster 3
+# OM distance
+omt3 <- seqdist(seq3, method = "OM", indel = 1, sm = "TRATE")
+
+# Select medoids based on distance
+srfomt3 <- seqrf(seq3,
+                 diss = omt3,
+                 sortv = "mds",
+                 grp.meth = "first")
+
+pdf(file = paste0(graph.folder, "seqrf_om_c3.pdf"),
+    width=w, height=h)
+plot(srfomt3, which.plot = "both", main = l3)
+dev.off()
+
+
+# Cluster 4
+# OM distance
+omt4 <- seqdist(seq4, method = "OM", indel = 1, sm = "TRATE")
+
+# Select medoids based on distance
+srfomt4 <- seqrf(seq4,
+                 diss = omt4,
+                 sortv = "mds",
+                 grp.meth = "first")
+
+pdf(file = paste0(graph.folder, "seqrf_om_c4.pdf"),
+    width=w, height=h)
+plot(srfomt4, which.plot = "both", main = l4)
+dev.off()
+
+# Cluster 5
+# OM distance
+omt5 <- seqdist(seq5, method = "OM", indel = 1, sm = "TRATE")
+
+# Select medoids based on distance
+srfomt5 <- seqrf(seq5,
+                 diss = omt5,
+                 sortv = "mds",
+                 grp.meth = "first")
+
+pdf(file = paste0(graph.folder, "seqrf_om_c5.pdf"),
+    width=w, height=h)
+plot(srfomt5, which.plot = "both", main = l5)
+dev.off()
+
+
+# Cluster 6
+# OM distance
+omt6 <- seqdist(seq6, method = "OM", indel = 1, sm = "TRATE")
+
+# Select medoids based on distance
+srfomt6 <- seqrf(seq6,
+                 diss = omt6,
+                 sortv = "mds",
+                 grp.meth = "first")
+
+pdf(file = paste0(graph.folder, "seqrf_om_c6.pdf"),
+    width=w, height=h)
+plot(srfomt6, which.plot = "both", main = l6)
+dev.off()
+
+
+pdf(paste0(graph.folder, "seqrf_om_cluster6.pdf"), 
+    width = 8, height = 9)
+par(mfrow = c(3, 4), # 3 rows, 4 columns
+    mar = c(3.5, 2, 3 , 2), # margins of each plot
+    mgp = c(2, 1, 0)) # margins around axis title, axis labels, and axis line
+plot(srfomt1, which.plot = "medoids", skipar = TRUE, main = l1, cex.main = 1.1, info = "none")
+plot(srfomt1, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
+
+plot(srfomt2, which.plot = "medoids", skipar = TRUE, main = l2, cex.main = 1.1, info = "none")
+plot(srfomt2, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
+
+plot(srfomt3, which.plot = "medoids", skipar = TRUE, main = l3, cex.main = 1.1, info = "none")
+plot(srfomt3, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
+
+plot(srfomt4, which.plot = "medoids", skipar = TRUE, main = l4, cex.main = 1.1, info = "none")
+plot(srfomt4, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
+
+plot(srfomt5, which.plot = "medoids", skipar = TRUE, main = l5, cex.main = 1.1, info = "none", xlab = "Age")
+plot(srfomt5, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
+
+plot(srfomt6, which.plot = "medoids", skipar = TRUE, main = l6, cex.main = 1.1, info = "none", xlab = "Age")
+plot(srfomt6, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
+dev.off()
+par(original_par) # reset layout
 
 
 
 
+### Complexity indicators per cluster ####
 
+indic1 <- seqindic(seq1, indic=c("cplx"), with.missing=F) # complexity index
+indic2 <- seqindic(seq2, indic=c("cplx"), with.missing=F) 
+indic3 <- seqindic(seq3, indic=c("cplx"), with.missing=F) 
+indic4 <- seqindic(seq4, indic=c("cplx"), with.missing=F) 
+indic5 <- seqindic(seq5, indic=c("cplx"), with.missing=F) 
+indic6 <- seqindic(seq6, indic=c("cplx"), with.missing=F) 
 
+# store means across full sample and rowbind into one dataframe
+indic_mean60c <- indic1 %>%
+  summarise(round(across(everything(), \(x) mean(x, na.rm = TRUE)),2)) %>% 
+  rbind(indic2 %>% summarise(round(across(everything(), \(x) mean(x, na.rm = TRUE)),2)),
+        indic3 %>% summarise(round(across(everything(), \(x) mean(x, na.rm = TRUE)),2)),
+        indic4 %>% summarise(round(across(everything(), \(x) mean(x, na.rm = TRUE)),2)),
+        indic5 %>% summarise(round(across(everything(), \(x) mean(x, na.rm = TRUE)),2)),
+        indic6 %>% summarise(round(across(everything(), \(x) mean(x, na.rm = TRUE)),2)))
 
-#### DESCRIPTION OF CLUSTERS (preliminary) ####
+# Swap rows and columns of indic_mean
+tab_ind_clusters60 <- as.data.frame(t(indic_mean60c))
 
-indic <- seqindic(seq, indic=c("lgth", "visited", "trans", "entr", "turb2n", "cplx"), with.missing=F)
+# Store as docx
+set_flextable_defaults(
+  font.size = 11,
+  border.color = 'black',
+  line_spacing = 1.3,
+)
 
-indic$cluster <- gp$cluster
+ind_cl60 <- flextable(tab_ind_clusters60)  
+ind_cl60
 
-indic_mean_cl <- indic %>%
-  group_by(cluster) %>% 
-  summarise(across(everything(), \(x) mean(x, na.rm = TRUE)))
+save_as_docx(ind_cl60, path = paste0(folder.baseseed, "Tab3_ind_cl60.docx"), align = "left")
+
 
 ### last line ###
 

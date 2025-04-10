@@ -49,20 +49,20 @@ agg <- gp60 %>%
 
 
 # Swap rows and columns of indic_mean
-tab2_agg <- agg %>%
+tab1_agg <- agg %>%
   mutate(across(-cohort, ~ round(.x, 2))) %>%
   pivot_longer(-cohort, names_to = "variable", values_to = "value") %>%
   pivot_wider(names_from = cohort, values_from = value) %>%
   column_to_rownames("variable") # Moves "variable" column to row names
 
 # Number of observations
-tab2_n <- gp60 %>%
+tab1_n <- gp60 %>%
   rbind(gp00) %>% 
   mutate(cohort = dob_year) %>% 
   count(cohort) %>% 
   pivot_wider(names_from = cohort, values_from = n)
 
-rownames(tab2_n) <- "N"
+rownames(tab1_n) <- "N"
 
 
 ### DEFINE SEQUENCES ####
@@ -155,7 +155,7 @@ indic_mean <- indic_mean60 %>%
   rbind(indic_mean00) 
 
 # Swap rows and columns of indic_mean
-tab2_ind <- indic_mean %>%
+tab1_ind <- indic_mean %>%
   pivot_longer(-cohort, names_to = "variable", values_to = "value") %>%
   pivot_wider(names_from = cohort, values_from = value) %>%
   column_to_rownames("variable")
@@ -198,16 +198,16 @@ gp_mt00 <- round(seqmeant(seq00),2)
 colnames(gp_mt60) <- "1960"
 colnames(gp_mt00) <- "2000"
 
-tab2_mt <- gp_mt60 %>% 
+tab1_mt <- gp_mt60 %>% 
   cbind(gp_mt00) %>% 
   as.data.frame() 
 
 
-#### CREATE TAB 2 ####
-tab2 <- tab2_agg %>% 
-  rbind(tab2_n, tab2_mt, tab2_ind)
+#### CREATE TAB 1 ####
+tab1 <- tab1_agg %>% 
+  rbind(tab1_n, tab1_mt, tab1_ind)
 
-tab2 <- rownames_to_column(tab2, var = "Measure")
+tab1 <- rownames_to_column(tab1, var = "Measure")
 
 library(gt)
 library(flextable)
@@ -218,13 +218,13 @@ set_flextable_defaults(
   line_spacing = 1.3,
 )
 
-ft2 <- flextable(tab2) %>% 
+ft1 <- flextable(tab1) %>% 
   add_header_row(colwidths = c(1,2), values = c(" ", "Cohort")) %>% 
   align(align = "center", part = "header") %>% 
   align(j = 1, align = "left", part = "body") # first column left-align
-ft2
+ft1
 
-save_as_docx("Table 2" = ft2, path = paste0(folder.baseseed, "Tab2.docx"), align = "left")
+save_as_docx("Table 1" = ft1, path = paste0(folder.baseseed, "Tab1.docx"), align = "left")
 
 ft_bic <- flextable(bic)%>% 
   align(align = "center", part = "header") %>% 
@@ -246,7 +246,6 @@ load(paste0(folder.baseseed, "gp2000100_chi.RData"))
 gp00 <- gp
 
 
-
 ### AGGREGATE-LEVEL COMPARISONS ####
 
 agg <- gp60 %>% 
@@ -258,8 +257,8 @@ agg <- gp60 %>%
   select(cohort, chi, dage:gcage) # exchange 'cohort' for 'dob_year'
 
 
-# Swap rows and columns of indic_mean
-tab2_agg <- agg %>%
+# Swap rows and columns 
+tab3_agg <- agg %>%
   ungroup() %>% 
   mutate(across(-c(cohort, chi), ~ round(.x, 2))) %>%
   pivot_longer(-c(cohort, chi), names_to = "variable", values_to = "value") %>%
@@ -271,10 +270,14 @@ tab3_n <- gp60 %>%
   rbind(gp00) %>% 
   mutate(cohort = dob_year) %>% 
   count(cohort, chi) %>% 
-  pivot_wider(names_from = cohort, values_from = n)
+  pivot_wider(names_from = c(cohort,chi), values_from = n) 
 
 rownames(tab3_n) <- "N"
 
+tab3 <- tab3_agg %>% 
+  rbind(tab3_n)
+
+tab3 <- rownames_to_column(tab3, var = "Variable")
 
 
 set_flextable_defaults(
@@ -283,11 +286,16 @@ set_flextable_defaults(
   line_spacing = 1.3,
 )
 
-ft3 <- flextable(tab2_agg) %>% 
+ft3 <- flextable(tab3) %>% 
+  add_header_row(colwidths = c(1,6,5), values = c(" ", "1960 birth cohort", "2000 birth cohort")) %>% 
+  align(align = "center", part = "header") %>% 
   align(j = 1, align = "left", part = "body") # first column left-align
 ft3
 
 save_as_docx("Table 3" = ft3, path = paste0(folder.baseseed, "Tab3.docx"), align = "left")
+
+
+
 
 
 ### last line ###

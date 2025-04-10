@@ -2,21 +2,26 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # PREPARE DATA AND GENERATE SEQUENCE ANALYSIS OUTPUT FOR BENCHMARKING
-# 1960 BIRTH COHORT - AGE RANGE 0-67 
+# 1953 BIRTH COHORT - AGE RANGE 0-67 
 
 # huenteler@demogr.mpg.de
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-cohort <- 1960
-max_age <- 59
+library(dplyr)
+
+
+cohort <- 1953
+max_age <- 66
 ages <- as.character(c(0:max_age))
+base_seed <- 123
+folder <- "N:\\durable\\Data20\\Project_JW_FamWealth\\simgpt/"
 
 # Generate folders to store results
 # Need to be manually exported from Norwegian server containing the register data
 
 # 1. Upper level folder based on simulation base_seed
-folder.baseseed <- paste0(folder,"/sim_results_", supfile, "_",base_seed,"_/")
+folder.baseseed <- paste0(folder,"/sim_results_",base_seed, "/")
 if (!dir.exists(folder.baseseed)) {
   # If not, create the new folder
   dir.create(folder.baseseed)
@@ -37,22 +42,34 @@ if (!dir.exists(graph.folder)) {
 
 
 
-#### MERGE MULTIPLE SIMULATION OUTPUTS FOR 1960 COHORT ####
 
-# load the gp-data for from each simulation
-for (i in c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) {
 
-load(paste0(folder, "/sim_results_", supfile, "_",base_seed,i,"_/gp196059.RData"))
-assign(paste0("gp_", i), gp)  
+#### MERGE SIMULATION OUTPUTS FOR 1953 COHORT WITH EMPIRICAL DATA ####
 
-}
+# load the gp-data for from the simulation
+load("N:\\durable\\Data20\\Project_JW_FamWealth\\simgpt\\data\\gp195366.RData")
+gpm <- gp
 
-# merge the simulations into one gp-dataframe
-gp <- rbind(gp_1, gp_2, gp_3, gp_4, gp_5, gp_6, gp_7, gp_8, gp_9, gp_10)
 
-# store combined gp dataframe in base_seed folder
-save(gp, file = paste0(folder.baseseed, "gp196059.RData"))
+#### EMPIRICAL REGISTER DATA #####
 
+# Load
+library(foreign)
+gp <- read.dta("N:\\durable\\Data20\\Project_JW_FamWealth\\simgpt\\data\\gp_wide.dta", 
+               convert.factors = TRUE)
+
+# store as gp-dataframe with suffix e (empirical)
+gpe <- gp %>% 
+  select(id, gp1953:gp2019, dage, bage_c, bage_gc, numkids, numgkids, dead_p)
+
+# add new variable "group" to the df for later comparison with simulated data
+gpe <- cbind(gpe, group = 2)
+
+
+
+##### MERGE EMPIRICAL and MICROSIMULATED DATA ####
+gp <- gpe %>% 
+  rbind(gpm)
 
 
 ### last line ###
