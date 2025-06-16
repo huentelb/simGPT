@@ -306,22 +306,22 @@ dev.off()
 
 # We extract X clusters and re-label them from 1 to X to replace the medoid identifiers
 
-# identify medoids sorted by frequency
+# identify medoids sorted by frequency and then by similar clusters in 60s cohort
 mc <- chi_pam10$clustering$cluster5[ac$disaggIndex]
 med <- as.data.frame(sort(table(mc), decreasing = TRUE))
 med1 <- as.character(med[1,1])
-med2 <- as.character(med[2,1])
+med2 <- as.character(med[4,1])
 med3 <- as.character(med[3,1])
-med4 <- as.character(med[4,1])
-med5 <- as.character(med[5,1])
+med4 <- as.character(med[5,1])
+med5 <- as.character(med[2,1])
 
 # store size of clusters for each cluster to add to titles
 propmed <- as.data.frame(sort(prop.table(table(mc)), decreasing = TRUE))
 propmed1 <- round(propmed[1,2], digits = 2)*100
-propmed2 <- round(propmed[2,2], digits = 2)*100
+propmed2 <- round(propmed[4,2], digits = 2)*100
 propmed3 <- round(propmed[3,2], digits = 2)*100
-propmed4 <- round(propmed[4,2], digits = 2)*100
-propmed5 <- round(propmed[5,2], digits = 2)*100
+propmed4 <- round(propmed[5,2], digits = 2)*100
+propmed5 <- round(propmed[2,2], digits = 2)*100
 
 
 # create factor containing medoids incl labels
@@ -330,10 +330,10 @@ mc.factor <- factor(mc, levels = c(med1, med2, med3, med4, med5),
 
 # store labels as values for later use
 l1 <- as.character(paste0("Cluster 1 -\n 3-gen family (", propmed1, "%)"))
-l2 <- as.character(paste0("Cluster 2 -\n Childless (", propmed2, "%)"))
+l2 <- as.character(paste0("Cluster 2 -\n 3-gen (via 2-gen) family (", propmed2, "%)"))
 l3 <- as.character(paste0("Cluster 3 -\n 4-gen family (", propmed3, "%)"))
-l4 <- as.character(paste0("Cluster 4 -\n 3-gen (via 2-gen) family (", propmed4, "%)"))
-l5 <- as.character(paste0("Cluster 5 -\n 2-gen family (", propmed5, "%)"))
+l4 <- as.character(paste0("Cluster 4 -\n 2-gen family/fuzzy (", propmed4, "%)"))
+l5 <- as.character(paste0("Cluster 5 -\n Non-parent (", propmed5, "%)"))
 
 # attach to dataframe to use as weights in plots
 gp$chi <- factor(mc.factor,
@@ -378,6 +378,7 @@ seqfplot(seq, group = gp$chi, border = NA,
          missing.color = "#f7f7f7", idxs = 1:50)
 dev.off()
 
+by(seq, gp$chi, seqmeant)
 png(file = paste0(graph.folder, "mean_plot_5_lab.png"),
     width=w, height=h)
 seqmtplot(seq, group = gp$chi, border = NA,

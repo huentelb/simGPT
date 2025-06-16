@@ -39,14 +39,52 @@ gp00 <- gp
 
 ### AGGREGATE-LEVEL COMPARISONS ####
 
-agg <- gp60 %>% 
+# Means
+agg_mean <- gp60 %>% 
   rbind(gp00) %>% 
-  select(dob_year, dage, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
+  select(dob_year, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
   group_by(dob_year) %>% 
   summarise_all(mean, na.rm = TRUE) %>% 
   mutate(cohort = dob_year) %>% 
   select(cohort, dage:gcage) # exchange 'cohort' for 'dob_year'
 
+# Medians
+agg_p50 <- gp60 %>% 
+  rbind(gp00) %>% 
+  select(dob_year, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  group_by(dob_year) %>% 
+  summarise_all(median, na.rm = TRUE) %>% 
+  mutate(cohort = dob_year) %>% 
+  select(cohort, dage:gcage) %>% # exchange 'cohort' for 'dob_year'
+  rename_with(.fn = ~ paste0(.x, "_p50"), .cols = -cohort)
+
+# SD
+agg_sd <- gp60 %>% 
+  rbind(gp00) %>% 
+  select(dob_year, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  group_by(dob_year) %>% 
+  summarise_all(sd, na.rm = TRUE) %>% 
+  mutate(cohort = dob_year) %>% 
+  select(cohort, dage:gcage) %>% # exchange 'cohort' for 'dob_year'
+  rename_with(.fn = ~ paste0(.x, "_sd"), .cols = -cohort)
+
+# Combine means, medians and SD into one df
+agg <- agg_mean %>%
+  left_join(agg_sd, by = "cohort") %>%
+  left_join(agg_p50, by = "cohort") %>%
+  select (
+    cohort,
+    starts_with("dage"),
+    starts_with("dead_p"),
+    starts_with("pdage"),
+    starts_with("isparent"),
+    starts_with("numkids"),
+    starts_with("cage"),
+    starts_with("isgparent"),
+    starts_with("numgkids"),
+    starts_with("gcage")
+  )
+    
 
 # Swap rows and columns of indic_mean
 tab1_agg <- agg %>%
@@ -247,32 +285,91 @@ gp00 <- gp
 
 
 ### AGGREGATE-LEVEL COMPARISONS ####
-
-agg <- gp60 %>% 
-  rbind(gp00) %>% 
-  select(dob_year, chi, dage, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
+# Means
+agg_mean <- gp60 %>% 
+  rbind (gp00) %>%
+  select (dob_year, chi, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
   mutate(cohort = dob_year) %>% 
-  group_by(cohort, chi) %>% 
-  summarise_all(mean, na.rm = TRUE) %>% 
-  select(cohort, chi, dage:gcage) # exchange 'cohort' for 'dob_year'
+  group_by(chi, cohort) %>%
+  summarise_all (mean, na.rm = TRUE)
 
+# Medians (for cont vars)
+agg_p50 <- gp60 %>% 
+  rbind (gp00) %>%
+  select (dob_year, chi, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  mutate(cohort = dob_year) %>% 
+  group_by(chi, cohort) %>%
+  summarise_all (median, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "_p50"), .cols = -c(cohort, chi))
 
-# Swap rows and columns 
-tab3_agg <- agg %>%
+# SD (for cont vars)
+agg_sd <- gp60 %>% 
+  rbind (gp00) %>%
+  select (dob_year, chi, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  mutate(cohort = dob_year) %>% 
+  group_by(chi, cohort) %>%
+  summarise_all (sd, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "_sd"), .cols = -c(cohort, chi))
+
+# Combine means, medians and SD into one df
+agg <- agg_mean %>%
+  left_join(agg_sd, by = c("cohort", "chi")) %>% 
+  left_join(agg_p50, by = c("cohort", "chi")) %>% 
+  select( 
+    cohort, 
+    starts_with("dage"), 
+    starts_with("dead_p"), 
+    starts_with("pdage"),
+    starts_with("isparent"),
+    starts_with("numkids"), 
+    starts_with("cage"),
+    starts_with("isgparent"),
+    starts_with("numgkids"),
+    starts_with("gcage")
+    )
+
+# Round values of indicators
+agg_round <- agg %>% 
   ungroup() %>% 
-  mutate(across(-c(cohort, chi), ~ round(.x, 2))) %>%
-  pivot_longer(-c(cohort, chi), names_to = "variable", values_to = "value") %>%
-  pivot_wider(names_from = c(cohort, chi), values_from = value) %>%
-  column_to_rownames("variable") # Moves "variable" column to row names
+  mutate(across(-c(chi, cohort), ~round(.x, 2)))
+
+# Swap rows and columns
+# sorted in descending order (size) within cohorts
+tab3_agg <- agg_round %>% 
+  arrange(cohort, chi) %>% 
+  pivot_longer(cols = -c(chi, cohort), names_to = "variable", values_to = "value") %>% 
+  unite("group", chi, cohort, sep = "_") %>% # combine chi and cohort into a single column
+  pivot_wider(names_from = group, values_from = value) %>% 
+  column_to_rownames("variable") %>% 
+  select(
+    starts_with("Cluster 1"),
+    starts_with("Cluster 2"),
+    starts_with("Cluster 3"),
+    starts_with("Cluster 4"),
+    starts_with("Cluster ") # first both non-parent clusters for 1960, then 2000
+  )
+
 
 # Number of observations
 tab3_n <- gp60 %>%
   rbind(gp00) %>% 
   mutate(cohort = dob_year) %>% 
   count(cohort, chi) %>% 
-  pivot_wider(names_from = c(cohort,chi), values_from = n) 
-
-rownames(tab3_n) <- "N"
+  group_by(cohort) %>% 
+  mutate(prop = n / sum(n)*100) %>% 
+  pivot_longer(cols = -c(chi, cohort), names_to = "variable", values_to = "value") %>% 
+  mutate(across(c(value), ~round(.x, ))) %>% 
+  unite("group", chi, cohort, sep = "_") %>% 
+  pivot_wider(names_from = group, values_from = value) %>% 
+  column_to_rownames("variable") %>%
+  select(
+    starts_with("Cluster 1"),
+    starts_with("Cluster 2"),
+    starts_with("Cluster 3"),
+    starts_with("Cluster 4"),
+    starts_with("Cluster ") # first both non-parent clusters for 1960, then 2000
+  ) %>% 
+  as.data.frame()
 
 tab3 <- tab3_agg %>% 
   rbind(tab3_n)
@@ -287,7 +384,7 @@ set_flextable_defaults(
 )
 
 ft3 <- flextable(tab3) %>% 
-  add_header_row(colwidths = c(1,6,5), values = c(" ", "1960 birth cohort", "2000 birth cohort")) %>% 
+  add_header_row(colwidths = c(1,2,2,2,2,3), values = c(" ", l1, l2, l3, l4, l5)) %>% 
   align(align = "center", part = "header") %>% 
   align(j = 1, align = "left", part = "body") # first column left-align
 ft3

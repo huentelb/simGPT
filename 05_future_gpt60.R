@@ -310,7 +310,7 @@ dev.off()
 
 
 # Mean time spent in each state by cluster
-by(seq, chi_pam10$clustering$cluster5, seqmeant)
+by(seq, chi_pam10$clustering$cluster6, seqmeant)
 png(file = paste0(graph.folder, "mean_plot_6.png"),
     width=964, height=556)
 seqmtplot(seq, group = chi_pam10$clustering$cluster6, border = NA,
@@ -365,8 +365,8 @@ l1 <- as.character(paste0("Cluster 1 -\n 3-gen family (", propmed1, "%)"))
 l2 <- as.character(paste0("Cluster 2 -\n 3-gen (via 2-gen) family (", propmed2, "%)"))
 l3 <- as.character(paste0("Cluster 3 -\n 4-gen family (", propmed3, "%)"))
 l4 <- as.character(paste0("Cluster 4 -\n 2-gen family/fuzzy (", propmed4, "%)"))
-l5 <- as.character(paste0("Cluster 5 -\n Childless (", propmed5, "%)"))
-l6 <- as.character(paste0("Cluster 6 -\n Childless + early own death (", propmed6, "%)"))
+l5 <- as.character(paste0("Cluster 5 -\n Non-parent (", propmed5, "%)"))
+l6 <- as.character(paste0("Cluster 6 -\n Non-parent + early death (", propmed6, "%)"))
 
 # attach to dataframe to use as weights in plots
 gp$chi <- factor(mc.factor,
@@ -414,6 +414,7 @@ seqfplot(seq, group = gp$chi, border = NA,
          missing.color = "#f7f7f7", idxs = 1:100)
 dev.off()
 
+by(seq, gp$chi, seqmeant)
 png(file = paste0(graph.folder, "mean_plot_6_lab.png"),
     width=w, height=h)
 seqmtplot(seq, group = gp$chi, border = NA,

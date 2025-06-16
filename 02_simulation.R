@@ -324,7 +324,7 @@ opop <- opop %>%
 
 # Saving opop data frame for usage in R on my Mac
 save(opop, file = paste0(folder,"/sim_results_", supfile, "_",seed,"_/opop.RData"))
-
+}
 
 
 ## PREPARATION SEQUENCE ANALYSIS ##
