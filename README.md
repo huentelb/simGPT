@@ -46,8 +46,6 @@ The UNWPP data come in a different format than the HFC/HFD and HMD data. You can
 * Female mortality: [fltper_1x1_med.txt](Input/fltper_1x1_med.txt)
 * Male mortality: [mltper_1x1_med.txt](Input/mltper_1x1_med.txt)
 
-* In the appendix, we present results based on simulations with the *high fertility scenario* and the *low fertility scenario*. 
-
 
 ### 2. Set up before you start
 Before you start with the microsimulation, please adjust the [setup](setup.R). We have automated many of the storing or labelling processes in the code. Therefore, you should check whether the information provided in the setup matches the simulation-specification etc. that you will be using. You should pay attention to the following options you can set:
