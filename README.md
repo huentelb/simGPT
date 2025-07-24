@@ -1,16 +1,17 @@
-# Generational Placement Trajectories in Norway: Combining Empirical and Simulated Data [simGPT]
-Code (WIP) to produce output for ongoing *simGPT* project (joint work by Bettina Hünteler and Diego Alburez). 
+# Projecting Generational Placement Trajectories: Empirical and Simulated Populations in Norway
+Authored by Bettina Hünteler & Diego Alburez-Gutierrez. For questions contact huenteler@demogr.mpg.de. 
 
 ## Objective
 We aim to answer two research questions:
-1. Can microsimulation be used to validly estimate generational placement trajectories (GPT) in Norway?
-2. How will typical generational placement trajectories develop for the entire life course (ages 0–100) across different birth cohorts in Norway?
+1. Can microsimulation be used to validly estimate generational placement trajectories (GPT)?
+2. Which typical patterns emerge when considering the full life course (ages 0–100) for the 1960 and 2000 birth cohorts (RQ2)?
+3. How do these patterns compare between the cohorts regarding the timing of transitions as well as occurrence and duration of states (RQ3)?
 
 This is the main output we want to produce to answer these questions:
 1. Synthetic population register of individuals living in Norway in which we can link parents to their children based on `rsocsim`.
 2. Generational placement patterns (see [Hünteler, 2022](https://www.sciencedirect.com/science/article/pii/S104026082100054X)) for two cohorts across two age ranges
     - 1960 birth cohort, age range 0 – 59: for benchmarking against existing historical register data (RQ1),
-    - 1960 and 2000 birth cohorts, age range 0 – 100: for projecting generational placement trajectories into the future (RQ2). 
+    - 1960 and 2000 birth cohorts, age range 0 – 100: for projecting generational placement trajectories into the future (RQ2) and comparing them (RQ3). 
 
 
 
@@ -28,8 +29,7 @@ To reproduce, have the following packages installed:
     - Human Fertility Collection (HFC) for the past periods 1846 – 1966
     - Human Fertility Database (HFD) for the past periods 1967 – 2022
     - United Nations World Population Prospects (UNWPP24) for the past period 2023
-    - United Nations World Population Prospects (UNWPP24) for the future periods 2024 – 2100
-        - with three scenarios: low, medium, momentum
+    - United Nations World Population Prospects (UNWPP24) for the future periods 2024 – 2100 (medium scenario)
 
 2. Mortality data come from the following sources
     - Human Mortality Database (HMD) for the past periods 1846 – 2023
