@@ -1,17 +1,19 @@
-# Generational Placement Trajectories in Norway: Combining Empirical and Simulated Data [simGPT]
-Code (WIP) to produce output for ongoing *simGPT* project (joint work by Bettina Hünteler and Diego Alburez). 
+# Projecting Generational Placement Trajectories: Empirical and Simulated Populations in Norway
+Authored by Bettina Hünteler & Diego Alburez-Gutierrez. For questions contact huenteler@demogr.mpg.de. 
 
 ## Objective
 We aim to answer two research questions:
-1. Can microsimulation be used to validly estimate generational placement trajectories (GPT) in Norway?
-2. How will typical generational placement trajectories develop for the entire life course (ages 0–100) across different birth cohorts in Norway?
+1. Can microsimulation be used to validly estimate generational placement trajectories (GPT)?
+2. Which typical patterns emerge when considering the full life course (ages 0–100) for the 1960 and 2000 birth cohorts (RQ2)?
+3. How do these patterns compare between the cohorts regarding the timing of transitions as well as occurrence and duration of states (RQ3)?
 
 This is the main output we want to produce to answer these questions:
 1. Synthetic population register of individuals living in Norway in which we can link parents to their children based on `rsocsim`.
 2. Generational placement patterns (see [Hünteler, 2022](https://www.sciencedirect.com/science/article/pii/S104026082100054X)) for two cohorts across two age ranges
     - 1960 birth cohort, age range 0 – 59: for benchmarking against existing historical register data (RQ1),
-    - 1960 and 2000 birth cohorts, age range 0 – 100: for projecting generational placement trajectories into the future (RQ2). 
+    - 1960 and 2000 birth cohorts, age range 0 – 100: for projecting generational placement trajectories into the future (RQ2) and comparing them (RQ3). 
 
+You can find a graphical representation of the analytical strategy in the manuscript (Figure 1). 
 
 
 ## This is how we do it
@@ -28,8 +30,7 @@ To reproduce, have the following packages installed:
     - Human Fertility Collection (HFC) for the past periods 1846 – 1966
     - Human Fertility Database (HFD) for the past periods 1967 – 2022
     - United Nations World Population Prospects (UNWPP24) for the past period 2023
-    - United Nations World Population Prospects (UNWPP24) for the future periods 2024 – 2100
-        - with three scenarios: low, medium, momentum
+    - United Nations World Population Prospects (UNWPP24) for the future periods 2024 – 2100 (medium scenario)
 
 2. Mortality data come from the following sources
     - Human Mortality Database (HMD) for the past periods 1846 – 2023
@@ -46,11 +47,9 @@ The UNWPP data come in a different format than the HFC/HFD and HMD data. You can
 * Female mortality: [fltper_1x1_med.txt](Input/fltper_1x1_med.txt)
 * Male mortality: [mltper_1x1_med.txt](Input/mltper_1x1_med.txt)
 
-* In the appendix, we present results based on simulations with the *high fertility scenario* and the *low fertility scenario*. 
-
 
 ### 2. Set up before you start
-Before you start with the microsimulation, please adjust the [setup](setup.R). We have automated many of the storing or labelling processes in the code. Therefore, you should check whether the information provided in the setup matches the simulation-specification etc. that you will be using. You should pay attention to the following options you can set:
+Before you start with the microsimulation, please adjust the [setup](01_setup.R). We have automated many of the storing or labelling processes in the code. Therefore, you should check whether the information provided in the setup matches the simulation-specification etc. that you will be using. You should pay attention to the following options you can set:
 
 *Note: If you leave the code as is provided here, you only need to adjust (5) the base seed and (6) your working directory!*
 1. Working directory
@@ -65,7 +64,7 @@ Before you start with the microsimulation, please adjust the [setup](setup.R). W
 ### 3. Microsimulation (to build synthetic population register)
 *The code to run the following two steps (3. and 4.) is included in [02_simulation.R](02_simulation.R).*
 
-1. First, you convert input data into monthly rates using [functions.R](functions.R) which is started from within [simgpt_DEL.R](simgpt_DEL.R).
+1. First, you convert input data into monthly rates using [functions.R](functions.R) which is started from within [02_simulation.R](02_simulation.R).
 2. Second, you run your microsimulation *i* times (set up in a loop). For the main analysis, we ran 10 simulation rounds and merged the resulting synthetic populations to achieve substantial enough cohort sizes. 
     * You can adjust the microsimulation settings in the [supfile](socsim_NOR.sup). For our current output we go with the following setting:
         - Birth interval: 9
@@ -76,17 +75,11 @@ Before you start with the microsimulation, please adjust the [setup](setup.R). W
 3. Compare input to simulation rates on the aggregate level. To this end, the code produces two graphs for each simulation (stored in your simulation round's subfolder 'graphs') that compare the age-specific mortality (both sexes) and fertility (only female) rates across different periods. 
 
 
-### 4. Build dataframes to analyse generational placement trajectories (GPT)
-Based on each simulation, you create a dataframe containing the GPT for different subsamples (initiated by a loop varying the birth cohort and age ranges considered):
-- *gp196059.RData*: 1960 cohort, age range 0 to 59: for benchmarking against empirical register data
-- *gp1960100.RData*: 1960 cohort, age range 0 to 100: for projection into the future
-- *gp2000100.RData*: 2000 cohort, age range 0 to 100: for projection into the future
-
-These dataframes are stored in your simulation-subfolders based on *base seed* and simulation round *i*. 
+### 4. Construct generational placement trajectories (GPT)
 
 GPT indicate at each age, whether focal is alive and whether they have at least one parent, at least one child, and/or at least one grandchild that is alive. 
 
-The construction of GPT follows the following steps and are applied to each *i* simulation round using a loop:
+The construction of GPT follows the following steps and are applied to each *i* simulation round using a loop (in [02_simulation.R](02_simulation.R)):
 1. Identify parents and focal's age when the second parent died
 2. Identify children and focal's age when the first child was born
 3. Identify grandchildren and focal's age when the first grandchild was born
@@ -98,29 +91,29 @@ The construction of GPT follows the following steps and are applied to each *i* 
 
 
 ### 5. Sequence and cluster analysis
-The next steps of the analyses all rely on sequence and cluster analysis. We use this, to analyse the GPT and identify a reasonable number of clusters that group together similar GPT and represent typical generational placement patterns. We run various sets of the following analytical steps on our different subsamples from step 4. 
+The next steps of the analyses all rely on sequence and cluster analysis. We use this, to analyse the GPT and identify a reasonable number of clusters that group together similar GPT and represent typical generational placement patterns. We run various sets of the following analytical steps on different subsamples: 
 
-This is the logic:
+Based on each simulation, you create a dataframe containing the GPT for different subsamples (initiated by a loop varying the birth cohort and age ranges considered):
+- *gp196059.RData*: 1960 cohort, age range 0 to 59: for benchmarking against empirical register data (in [03_prep_benchmark.R](03_prep_benchmark.R))
+- *gp1960100.RData*: 1960 cohort, age range 0 to 100: for projection into the future (in [05_future_gpt60.R](05_future_gpt60.R))
+- *gp2000100.RData*: 2000 cohort, age range 0 to 100: for projection into the future (also in [05_future_gpt60.R](05_future_gpt60.R))
+
+These dataframes are stored in your simulation-subfolders based on *base seed* and simulation round *i*. 
+
+#### 5.1 Analytical steps (general)
 1. For each subsample, merge the different `gp_i` dataframes for each *i* simulation round into one `gp` dataframe. 
 2. Define individual sequences, i.e. our generational placement trajectories
     - with option "DEL" to delete the positions containing missing values = focal is dead to replace the missing values. See Gabadinho et al. (2010) for more details on the options for handling missing values when defining sequence objects.
 3. Calculate pairwise distance between each trajectory
-    - Chi<sup>2</sup>-distance measure
+    - Chi<sup>2</sup>-distance measure (sensitive to differences in timing; works on sequences with different lengths)
 4. Cluster them into groups containing trajectories that are similar within and different between the clusters
     - Partitioning around medoids cluster algorithm with Ward as starting point
-5. Generate output graphs
-    - State distribution plots for full population
-    - To compare cluster solutions between different numbers of clusters
-      - State distribution plots by cluster 
-      - Sequence frequency plots (i most frequent sequences) by cluster
-      - Mean time spent in each state by cluster
-    - Generate all the above plots with fitted labels for the ideal cluster solution
-      - Additionally: representative sequence plot to reduce overplotting
-6. Generate descriptive tables to describe the composition of clusters
+5. Generate output graphs (more details below)
+6. Generate descriptive tables to describe the composition of clusters (more details below)
 
 
-##### 5.1 Benchmarking (RQ1)
-[03_prep_benchmark.R](03_prep_benchmark.R) and [04_benchmark.R](04_benchmark.R) contain the code to compare the GPT from the synthetic population based on `rsocsim` with the empirical Norwegian register data. Note that you need access to the register data and that the empirical data needs to be prepared on the Norwegian server (GPT are defined using the same logic, but in stata; code not shared here). 
+#### 5.2 Benchmarking (RQ1)
+[03_prep_benchmark.R](03_prep_benchmark.R) and [04_benchmark.R](04_benchmark.R) contain the code to compare the GPT from the synthetic population based on `rsocsim` with the empirical Norwegian register data. Note that you need access to the register data and that the empirical data needs to be prepared on the Norwegian server (GPT are defined using the same logic, but in stata; code not shared here). The benchmarking is also conducted on the Norwegian server, after uploading the simulated data. The empirical data cannot be downloaded from the Norwegian server. 
 
 This is the main output these two code files produce:
 - Aggregate indicators of demographic events based on both data sources (Table 1)
@@ -129,13 +122,13 @@ This is the main output these two code files produce:
 - BIC differences between sequences based on both data sources (Table 1)
 - Cluster characteristics based on both data sources (Table 2)
 
-##### 5.2 Future GPT (RQ2) 
-[05_future_gpt60.R](05_future_gpt60.R) and [06_future_gpt00.R](06_future_gpt00.R) analyse the GPT for both birth cohorts (1960 and 2000) from ages 0 to 100, thereby 'projecting' GPT into the future and examining typical GPT for both cohorts.
+#### 5.3 Future GPT (RQ2) 
+[05_future_gpt60.R](05_future_gpt60.R) and [06_future_gpt00.R](06_future_gpt00.R) analyse the GPT for both birth cohorts (1960 and 2000) from ages 0 to 100, thereby 'projecting' GPT into the future and examining typical GPT for both cohorts. For these analyses, you only need the simulated data, thus no access to the Norwegian register data. 
 
 These two code files produce:
-- Graphical representation of typical GPT (Figure 1 and Figure 2)
+- Graphical representation of typical GPT through relative frequency sequence plots (Figure 2 and Figure 3)
 
-
+#### 5.4 Future GPT (RQ3) 
 The [07_future_compare.R](07_future_compare.R) compares the GPT for both cohorts, to investigate change of (typical) GPT over historical time. 
 
 This code file produces:
