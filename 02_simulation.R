@@ -4,7 +4,9 @@
 # RUN MICROSIMULATION
 # AND GENERATE SYNTHETIC POP REGISTERS FOR BIRTH COHORTS 1960 AND 2000
 
+# Code written by Bettina Hünteler
 # huenteler@demogr.mpg.de
+# https://github.com/huentelb/simGPT
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -28,10 +30,10 @@ library(rsocsim)
 source("functions.R")
 
 # convert HFD data to SOCSIM format
-# write_socsim_rates_HFD(Country = "NOR")
+write_socsim_rates_HFD(Country = "NOR")
 
 #convert HMD data to SOCSIM format
-# write_socsim_rates_HMD(Country = "NOR")
+write_socsim_rates_HMD(Country = "NOR")
 
 
 #### SIMULATION ####

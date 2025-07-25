@@ -6,7 +6,9 @@
 
 # ONLY RUNS ON SERVER WITH NORWEGIAN REGISTER DATA
 
+# Code written by Bettina Hünteler
 # huenteler@demogr.mpg.de
+# https://github.com/huentelb/simGPT
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -88,12 +90,47 @@ gpe <- gp %>%
 
 ### AGGREGATE-LEVEL COMPARISONS ####
 
-agg <- gpe %>% 
+# Means
+agg_mean <- gpe %>% 
   rbind(gpm) %>% 
-  select(source, dage, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
+  select(source, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
   group_by(source) %>% 
-  summarise_all(mean, na.rm = TRUE) #%>% 
-  # select(cohort, dage:gcage) # exchange 'cohort' for 'dob_year'
+  summarise_all(mean, na.rm = TRUE)
+  
+
+# Medians (for cont vars)
+agg_p50 <- gpe %>% 
+  rbind(gpm) %>% 
+  select(source, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  group_by(source) %>% 
+  summarise_all(median, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "_p50"), .cols = -source) 
+
+# SD (for cont vars)
+agg_sd <- gpe %>% 
+  rbind(gpm) %>% 
+  select(source, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  group_by(source) %>% 
+  summarise_all(sd, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "_sd"), .cols = -source) 
+
+
+# Combine means, medians and SD into one df
+agg <- agg_mean %>% 
+  left_join(agg_sd, by = "source") %>% 
+  left_join(agg_p50, by = "source") %>% 
+  select(
+    source,
+    starts_with("dage"),
+    starts_with("dead_p"),
+    starts_with("pdage"),
+    starts_with("isparent"),
+    starts_with("numkids"),
+    starts_with("cage"),
+    starts_with("isgparent"),
+    starts_with("numgkids"),
+    starts_with("gcage")
+  )
 
 
 # Swap rows and columns of indic_mean
@@ -111,7 +148,6 @@ tab1_n <- gpe %>%
   as.data.frame()
 
 rownames(tab1_n) <- "N"
-
 
 
 
@@ -149,11 +185,9 @@ cblind <- brewer.pal(6, "RdBu")
 
 
 # Define sequence object using the above characteristics
-acm <- wcAggregateCases(gpm[, 2:paste0(max_age+2)])
-acm
+# (without ac weights for seq indicators and BIC/LRT comparisons)
 
-seqm <- seqdef(gpm[acm$aggIndex, 2:paste0(max_age+2)],
-               weights = acm$aggWeights,
+seqm <- seqdef(gpm, 2:paste0(max_age+2),
                labels = gplabels,  
                cnames = ages, 
                tick.last = TRUE, 
@@ -164,11 +198,7 @@ seqm <- seqdef(gpm[acm$aggIndex, 2:paste0(max_age+2)],
                missing = "D", right = "DEL")
 
 
-ace <- wcAggregateCases(gpe[, 2:paste0(max_age+2)])
-ace
-
-seqe <- seqdef(gpe[ace$aggIndex, 2:paste0(max_age+2)],
-              weights = ace$aggWeights,
+seqe <- seqdef(gpe, 2:paste0(max_age+2),
               labels = gplabels,  
               cnames = ages, 
               tick.last = TRUE, 
@@ -216,6 +246,8 @@ indic_meanm <- indicm %>%
 indic_mean <- indic_meane %>% 
   rbind(indic_meanm) 
 
+
+
 # Swap rows and columns of indic_mean
 tab1_ind <- indic_mean %>%
   pivot_longer(-source, names_to = "variable", values_to = "value") %>%
@@ -247,7 +279,8 @@ bic <- as.data.frame(comp_occ, row.names = "Occurence") %>%
         as.data.frame(comp_dur, row.names = "Duration")) %>% 
   select(3,1,2) # select and order columns (BIC, LRT, p-value) 
 
-# Swap rows and columns of bic?
+write.csv(bic, paste0(graph.folder, "tab1_bic.csv"))
+
 
 
 ##### AVERAGE GP MEAN TIME ####
@@ -264,34 +297,46 @@ tab1_mt <- gp_mte %>%
 
 ##### CREATE TAB 1 ####
 tab1 <- tab1_agg %>% 
-  rbind(tab1_n, tab1_mt, tab1_ind)
+  rbind(tab1_mt, tab1_ind, tab1_n) %>% 
+  select(Register, Microsimulation)
 
-tab1 <- rownames_to_column(tab1, var = "Measure")
+tab1 <- rownames_to_column(tab1, var = "Measure") 
 
-library(gt)
-library(flextable)
-library(knitr)
-library(kableExtra)
+write.csv(tab1, paste0(graph.folder, "tab1.csv"))
 
 
-knitr::kable(tab1, "simple")
-knitr::kable(bic, "simple")
 
 
-# set_flextable_defaults(
-#   font.size = 11,
-#   border.color = 'black',
-#   line_spacing = 1.3,
-# )
-# 
-# ft1 <- flextable(tab1) %>% 
-#   add_header_row(colwidths = c(1,2), values = c(" ", "Cohort")) %>% 
-#   align(align = "center", part = "header") %>% 
-#   align(j = 1, align = "left", part = "body") # first column left-align
-# ft1
-# 
-# save_as_docx("Table 1" = ft1, path = paste0(folder.baseseed, "tab1.docx"), align = "left")
 
+### Define sequence objects using AC weights ####
+acm <- wcAggregateCases(gpm[, 2:paste0(max_age+2)])
+acm
+
+seqm <- seqdef(gpm[acm$aggIndex, 2:paste0(max_age+2)],
+               weights = acm$aggWeights,
+               labels = gplabels,  
+               cnames = ages, 
+               tick.last = TRUE, 
+               xtstep = 5, 
+               cpal = cblind, 
+               alphabet = gpalpha, 
+               states = gpstates,
+               missing = "D", right = "DEL")
+
+
+ace <- wcAggregateCases(gpe[, 2:paste0(max_age+2)])
+ace
+
+seqe <- seqdef(gpe[ace$aggIndex, 2:paste0(max_age+2)],
+               weights = ace$aggWeights,
+               labels = gplabels,  
+               cnames = ages, 
+               tick.last = TRUE, 
+               xtstep = 5, 
+               cpal = cblind, 
+               alphabet = gpalpha, 
+               states = gpstates,
+               missing = "D", right = "DEL")
 
 
 #### CLUSTER ANALYSIS EMPIRICAL ####
@@ -540,9 +585,9 @@ mc.factor <- factor(mc, levels = c(med1, med2, med3, med4, med5, med6),
 l1 <- as.character(paste0("Cluster 1 -\n Late 3-gen family (", propmed1, "%)"))
 l2 <- as.character(paste0("Cluster 2 -\n 4-gen family (", propmed2, "%)"))
 l3 <- as.character(paste0("Cluster 3 -\n 2-gen family (", propmed3, "%)"))
-l4 <- as.character(paste0("Cluster 4 -\n Childless late (", propmed4, "%)"))
+l4 <- as.character(paste0("Cluster 4 -\n Non-parent late (", propmed4, "%)"))
 l5 <- as.character(paste0("Cluster 5 -\n Early 3-gen (", propmed5, "%)"))
-l6 <- as.character(paste0("Cluster 6 -\n Childless early (", propmed6, "%)"))
+l6 <- as.character(paste0("Cluster 6 -\n Non-parent early (", propmed6, "%)"))
 
 # attach to dataframe to use as weights in plots
 gpe$chi <- factor(mc.factor,
@@ -567,34 +612,35 @@ seqchi <- seqdef(gpe, 2:paste0(max_age+2),
 # different plots with labels
 png(file = paste0(graph.folder, "seqD_6_lab.png"),
     width=w, height=h)
-seqdplot(seq, group = gpe$chi, border = NA,
+seqdplot(seqchi, group = gpe$chi, border = NA,
          ltext = gpstates, with.legend = FALSE, cex.axis = 2)
 dev.off()
 
 png(file = paste0(graph.folder, "seqI_6_lab.png"),
     width=w, height=h)
-seqIplot(seq, group = gpe$chi, border = NA,
+seqIplot(seqchi, group = gpe$chi, border = NA,
          ltext = gpstates, with.legend = FALSE, cex.axis = 2,
          missing.color = "#f7f7f7")
 dev.off()
 
 png(file = paste0(graph.folder, "seqF100_6_lab.png"),
     width=w, height=h)
-seqfplot(seq, group = gpe$chi, border = NA,
+seqfplot(seqchi, group = gpe$chi, border = NA,
          ltext = gpstates, with.legend = FALSE, cex.axis = 2,
          missing.color = "#f7f7f7", idxs = 1:100)
 dev.off()
 
+by(seqchi, gpe$chi, seqmeant)
 png(file = paste0(graph.folder, "mean_plot_6_lab.png"),
     width=w, height=h)
-seqmtplot(seq, group = gpe$chi, border = NA,
+seqmtplot(seqchi, group = gpe$chi, border = NA,
           ltext = c(gpstates), 
           missing.color = "#f7f7f7", with.legend = FALSE)
 dev.off()
 
 png(file = paste0(graph.folder, "seqr_6_lab.png"),
     width=w, height=h)
-seqrplot(seq, group = gpe$chi, border = NA,
+seqrplot(seqchi, group = gpe$chi, border = NA,
          ltext = c(gpstates), 
          missing.color = "#f7f7f7", with.legend = FALSE, diss = chi)
 dev.off()
@@ -868,7 +914,7 @@ plot(srfchi4, which.plot = "medoids", skipar = TRUE, main = l4, cex.main = 1, in
 plot(srfchi5, which.plot = "medoids", skipar = TRUE, main = l5, cex.main = 1, info = "none", xlab = "Age")
 plot(srfchi6, which.plot = "medoids", skipar = TRUE, main = l6, cex.main = 1, info = "none", xlab = "Age")
 dev.off()
-par(mfrow = c(1, 1)) # reset layout
+par(original_par) # reset layout
 
 
 pdf(paste0(graph.folder, "seqrf_both_cluster6.pdf"), 
@@ -1217,9 +1263,9 @@ mc.factor <- factor(mc, levels = c(med1, med2, med3, med4, med5, med6),
 l1 <- as.character(paste0("Cluster 1 -\n Late 3-gen family (", propmed1, "%)"))
 l2 <- as.character(paste0("Cluster 2 -\n 4-gen family (", propmed2, "%)"))
 l3 <- as.character(paste0("Cluster 3 -\n 2-gen family (", propmed3, "%)"))
-l4 <- as.character(paste0("Cluster 4 -\n Childless late (", propmed4, "%)"))
+l4 <- as.character(paste0("Cluster 4 -\n Non-parent late (", propmed4, "%)"))
 l5 <- as.character(paste0("Cluster 5 -\n Early 3-gen (", propmed5, "%)"))
-l6 <- as.character(paste0("Cluster 6 -\n Childless early (", propmed6, "%)"))
+l6 <- as.character(paste0("Cluster 6 -\n Non-parent early (", propmed6, "%)"))
 
 
 # attach to dataframe to use as weights in plots
@@ -1263,7 +1309,8 @@ seqfplot(seqchi, group = gpm$chi, border = NA,
          missing.color = "#f7f7f7", idxs = 1:50)
 dev.off()
 
-png(file = paste0(graph.folder, "mean_plot_5_lab_m.png"),
+by(seqchi, gpm$chi, seqmeant)
+png(file = paste0(graph.folder, "mean_plot_6_lab_m.png"),
     width=w, height=h)
 seqmtplot(seqchi, group = gpm$chi, border = NA,
           ltext = c(gpstates), 
@@ -1643,6 +1690,56 @@ agg <- gpe %>%
   summarise_all(mean, na.rm = TRUE) #%>% 
 # select(cohort, dage:gcage) # exchange 'cohort' for 'dob_year'
 
+# Means
+agg_mean <- gpe %>% 
+  rbind(gpm) %>% 
+  select(source, chi, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
+  group_by(chi, source) %>% 
+  summarise_all(mean, na.rm = TRUE)
+
+# Medians (for cont vars)
+agg_p50 <- gpe %>% 
+  rbind(gpm) %>% 
+  select(source, chi, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  group_by(chi, source) %>% 
+  summarise_all(median, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "_p50"), .cols = -c(source, chi))
+
+# SD (for cont vars)
+agg_sd <- gpe %>% 
+  rbind(gpm) %>% 
+  select(source, chi, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  group_by(chi, source) %>% 
+  summarise_all(sd, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "_sd"), .cols = -c(source, chi)) 
+
+
+# Combine means, medians and SD into one df
+agg <- agg_mean %>% 
+  left_join(agg_sd, by = c("source", "chi")) %>% 
+  left_join(agg_p50, by = c("source", "chi")) %>% 
+  select(
+    source,
+    starts_with("dage"),
+    starts_with("dead_p"),
+    starts_with("pdage"),
+    starts_with("isparent"),
+    starts_with("numkids"),
+    starts_with("cage"),
+    starts_with("isgparent"),
+    starts_with("numgkids"),
+    starts_with("gcage")
+  )
+
+
+# # Swap rows and columns 
+# tab1_agg <- agg %>%
+#   mutate(across(-c(chi, source), ~ round(.x, 2))) %>%
+#   pivot_longer(-c(chi, source), names_to = "variable", values_to = "value") %>%
+#   pivot_wider(names_from = source, values_from = value) %>%
+#   column_to_rownames("variable") # Moves "variable" column to row names
+
+
 
 # Rounds values of indicators
 agg_round <- agg %>%
@@ -1651,33 +1748,19 @@ agg_round <- agg %>%
 
 # Swaps rows and columns
 tab2_agg <- agg_round %>%
-  arrange(as.character(source), as.character(chi)) %>% # arrange alphabetically
-  pivot_longer(cols = -c(chi, source), names_to = "indicator", values_to = "value") %>%
+  arrange(desc(source), chi) %>% # arrange alphabetically
+  pivot_longer(cols = -c(chi, source), names_to = "variable", values_to = "value") %>%
   unite("group", chi, source, sep = "_") %>%  # Combine chi and source into a single column
-  pivot_wider(names_from = group, values_from = value)
-
-
-# STANDARD DEVIATIONS
-agg_sd <- gpe %>% 
-  rbind(gpm) %>% 
-  select(source, chi, dage, pdage, numkids, cage, numgkids, gcage) %>% 
-  group_by(chi, source) %>% 
-  summarise_all(sd, na.rm = TRUE) #%>% 
-# select(cohort, dage:gcage) # exchange 'cohort' for 'dob_year'
-
-
-# Rounds values of indicators
-agg_sd_round <- agg_sd %>%
-  ungroup() %>% 
-  mutate(across(-c(chi, source), ~ round(.x, 2))) 
-
-# Swaps rows and columns
-tab2_agg_sd <- agg_sd_round %>%
-  arrange(as.character(source), as.character(chi)) %>%  # arrange alphabetically
-  pivot_longer(cols = -c(chi, source), names_to = "indicator", values_to = "value") %>%
-  unite("group", chi, source, sep = "_") %>%  # Combine chi and source into a single column
-  pivot_wider(names_from = group, values_from = value)
-
+  pivot_wider(names_from = group, values_from = value) %>% 
+  column_to_rownames("variable") %>% 
+  select(
+    starts_with("Cluster 1"),
+    starts_with("Cluster 2"),
+    starts_with("Cluster 3"),
+    starts_with("Cluster 4"),
+    starts_with("Cluster 5"),
+    starts_with("Cluster 6")
+  )
 
 
 
@@ -1685,11 +1768,32 @@ tab2_agg_sd <- agg_sd_round %>%
 tab2_n <- gpe %>%
   rbind(gpm) %>% 
   count(chi, source) %>% 
-  pivot_wider(names_from = c(chi,source), values_from = n) %>%
-  as.data.frame()
+  group_by(source) %>%
+  mutate(prop = n / sum(n)*100) %>% 
+  pivot_longer(cols = -c(chi, source), names_to = "variable", values_to = "value") %>% 
+  mutate(across(c(value), ~ round(.x, ))) %>% 
+  unite("group", chi, source, sep = "_") %>%  # Combine chi and source into a single column
+  pivot_wider(names_from = group, values_from = value) %>%
+  column_to_rownames("variable") %>% 
+  as.data.frame() %>% 
+  select(
+    starts_with("Cluster 1"),
+    starts_with("Cluster 2"),
+    starts_with("Cluster 3"),
+    starts_with("Cluster 4"),
+    starts_with("Cluster 5"),
+    starts_with("Cluster 6")
+  )
 
-rownames(tab2_n) <- "N"
 
+
+##### CREATE TAB 2 ####
+tab2 <- tab2_agg %>% 
+  rbind(tab2_n) 
+
+tab2 <- rownames_to_column(tab2, var = "Measure") 
+
+write.csv(tab2, paste0(help.folder, "tab2.csv"))
 
 
 ### last line ###

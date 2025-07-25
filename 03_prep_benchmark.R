@@ -4,7 +4,9 @@
 # PREPARE DATA AND GENERATE SEQUENCE ANALYSIS OUTPUT FOR BENCHMARKING
 # 1953 BIRTH COHORT - AGE RANGE 0-67 
 
+# Code written by Bettina Hünteler
 # huenteler@demogr.mpg.de
+# https://github.com/huentelb/simGPT
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -4,7 +4,9 @@
 # SEQUENCE & CLUSTER ANALYSIS 
 # 2000 BIRTH COHORT - AGE RANGE 0-100
 
+# Code written by Bettina Hünteler
 # huenteler@demogr.mpg.de
+# https://github.com/huentelb/simGPT
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

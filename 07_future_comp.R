@@ -4,7 +4,9 @@
 # COMPARISON OF SEQUENCES ACROSS COHORTS 
 # 1960 & 2000 BIRTH COHORT - AGE RANGE 0-100
 
+# Code written by Bettina Hünteler
 # huenteler@demogr.mpg.de
+# https://github.com/huentelb/simGPT
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -392,7 +394,9 @@ ft3
 save_as_docx("Table 3" = ft3, path = paste0(folder.baseseed, "Tab3.docx"), align = "left")
 
 
-
+# Mean time in each state per cluster
+by(seq60, gp60$chi, seqmeant)
+by(seq00, gp00$chi, seqmeant)
 
 
 ### last line ###

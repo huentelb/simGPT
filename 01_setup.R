@@ -3,16 +3,15 @@
 
 # SET-UP FOR MICROSIMULATION
 
+# Code written by Bettina Hünteler
 # huenteler@demogr.mpg.de
+# https://github.com/huentelb/simGPT
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 # Set-up for microsimulations
 # Always make necessary adjustments BEFORE starting a new round of simulations here
-
-## 0. Link to GitHub Repository
-# https://github.com/huentelb/simGPT
 
 ## 1. Working directory
 setwd("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/simGPT")
