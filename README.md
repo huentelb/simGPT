@@ -100,7 +100,7 @@ Based on each simulation, you create a dataframe containing the GPT for differen
 
 These dataframes are stored in your simulation-subfolders based on *base seed* and simulation round *i*. 
 
-These are the analytical steps we run on the different subsamples:
+#### 5.1 Analytical steps (general)
 1. For each subsample, merge the different `gp_i` dataframes for each *i* simulation round into one `gp` dataframe. 
 2. Define individual sequences, i.e. our generational placement trajectories
     - with option "DEL" to delete the positions containing missing values = focal is dead to replace the missing values. See Gabadinho et al. (2010) for more details on the options for handling missing values when defining sequence objects.
@@ -112,7 +112,7 @@ These are the analytical steps we run on the different subsamples:
 6. Generate descriptive tables to describe the composition of clusters (more details below)
 
 
-#### 5.1 Benchmarking (RQ1)
+#### 5.2 Benchmarking (RQ1)
 [03_prep_benchmark.R](03_prep_benchmark.R) and [04_benchmark.R](04_benchmark.R) contain the code to compare the GPT from the synthetic population based on `rsocsim` with the empirical Norwegian register data. Note that you need access to the register data and that the empirical data needs to be prepared on the Norwegian server (GPT are defined using the same logic, but in stata; code not shared here). The benchmarking is also conducted on the Norwegian server, after uploading the simulated data. The empirical data cannot be downloaded from the Norwegian server. 
 
 This is the main output these two code files produce:
@@ -122,13 +122,13 @@ This is the main output these two code files produce:
 - BIC differences between sequences based on both data sources (Table 1)
 - Cluster characteristics based on both data sources (Table 2)
 
-#### 5.2 Future GPT (RQ2) 
+#### 5.3 Future GPT (RQ2) 
 [05_future_gpt60.R](05_future_gpt60.R) and [06_future_gpt00.R](06_future_gpt00.R) analyse the GPT for both birth cohorts (1960 and 2000) from ages 0 to 100, thereby 'projecting' GPT into the future and examining typical GPT for both cohorts. For these analyses, you only need the simulated data, thus no access to the Norwegian register data. 
 
 These two code files produce:
 - Graphical representation of typical GPT through relative frequency sequence plots (Figure 2 and Figure 3)
 
-#### 5.3 Future GPT (RQ3) 
+#### 5.4 Future GPT (RQ3) 
 The [07_future_compare.R](07_future_compare.R) compares the GPT for both cohorts, to investigate change of (typical) GPT over historical time. 
 
 This code file produces:
