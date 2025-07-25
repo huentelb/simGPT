@@ -49,7 +49,7 @@ The UNWPP data come in a different format than the HFC/HFD and HMD data. You can
 
 
 ### 2. Set up before you start
-Before you start with the microsimulation, please adjust the [setup](setup.R). We have automated many of the storing or labelling processes in the code. Therefore, you should check whether the information provided in the setup matches the simulation-specification etc. that you will be using. You should pay attention to the following options you can set:
+Before you start with the microsimulation, please adjust the [setup](01_setup.R). We have automated many of the storing or labelling processes in the code. Therefore, you should check whether the information provided in the setup matches the simulation-specification etc. that you will be using. You should pay attention to the following options you can set:
 
 *Note: If you leave the code as is provided here, you only need to adjust (5) the base seed and (6) your working directory!*
 1. Working directory
@@ -64,7 +64,7 @@ Before you start with the microsimulation, please adjust the [setup](setup.R). W
 ### 3. Microsimulation (to build synthetic population register)
 *The code to run the following two steps (3. and 4.) is included in [02_simulation.R](02_simulation.R).*
 
-1. First, you convert input data into monthly rates using [functions.R](functions.R) which is started from within [simgpt_DEL.R](simgpt_DEL.R).
+1. First, you convert input data into monthly rates using [functions.R](functions.R) which is started from within [02_simulation.R](02_simulation.R).
 2. Second, you run your microsimulation *i* times (set up in a loop). For the main analysis, we ran 10 simulation rounds and merged the resulting synthetic populations to achieve substantial enough cohort sizes. 
     * You can adjust the microsimulation settings in the [supfile](socsim_NOR.sup). For our current output we go with the following setting:
         - Birth interval: 9
@@ -75,17 +75,11 @@ Before you start with the microsimulation, please adjust the [setup](setup.R). W
 3. Compare input to simulation rates on the aggregate level. To this end, the code produces two graphs for each simulation (stored in your simulation round's subfolder 'graphs') that compare the age-specific mortality (both sexes) and fertility (only female) rates across different periods. 
 
 
-### 4. Build dataframes to analyse generational placement trajectories (GPT)
-Based on each simulation, you create a dataframe containing the GPT for different subsamples (initiated by a loop varying the birth cohort and age ranges considered):
-- *gp196059.RData*: 1960 cohort, age range 0 to 59: for benchmarking against empirical register data
-- *gp1960100.RData*: 1960 cohort, age range 0 to 100: for projection into the future
-- *gp2000100.RData*: 2000 cohort, age range 0 to 100: for projection into the future
-
-These dataframes are stored in your simulation-subfolders based on *base seed* and simulation round *i*. 
+### 4. Construct generational placement trajectories (GPT)
 
 GPT indicate at each age, whether focal is alive and whether they have at least one parent, at least one child, and/or at least one grandchild that is alive. 
 
-The construction of GPT follows the following steps and are applied to each *i* simulation round using a loop:
+The construction of GPT follows the following steps and are applied to each *i* simulation round using a loop (in [02_simulation.R](02_simulation.R)):
 1. Identify parents and focal's age when the second parent died
 2. Identify children and focal's age when the first child was born
 3. Identify grandchildren and focal's age when the first grandchild was born
@@ -97,9 +91,16 @@ The construction of GPT follows the following steps and are applied to each *i* 
 
 
 ### 5. Sequence and cluster analysis
-The next steps of the analyses all rely on sequence and cluster analysis. We use this, to analyse the GPT and identify a reasonable number of clusters that group together similar GPT and represent typical generational placement patterns. We run various sets of the following analytical steps on our different subsamples from step 4. 
+The next steps of the analyses all rely on sequence and cluster analysis. We use this, to analyse the GPT and identify a reasonable number of clusters that group together similar GPT and represent typical generational placement patterns. We run various sets of the following analytical steps on different subsamples: 
 
-This is the logic:
+Based on each simulation, you create a dataframe containing the GPT for different subsamples (initiated by a loop varying the birth cohort and age ranges considered):
+- *gp196059.RData*: 1960 cohort, age range 0 to 59: for benchmarking against empirical register data (in [03_prep_benchmark.R](03_prep_benchmark.R))
+- *gp1960100.RData*: 1960 cohort, age range 0 to 100: for projection into the future (in [05_future_gpt60.R](05_future_gpt60.R))
+- *gp2000100.RData*: 2000 cohort, age range 0 to 100: for projection into the future (also in [05_future_gpt60.R](05_future_gpt60.R))
+
+These dataframes are stored in your simulation-subfolders based on *base seed* and simulation round *i*. 
+
+These are the analytical steps we run on the different subsamples:
 1. For each subsample, merge the different `gp_i` dataframes for each *i* simulation round into one `gp` dataframe. 
 2. Define individual sequences, i.e. our generational placement trajectories
     - with option "DEL" to delete the positions containing missing values = focal is dead to replace the missing values. See Gabadinho et al. (2010) for more details on the options for handling missing values when defining sequence objects.
