@@ -14,7 +14,7 @@
 # Always make necessary adjustments BEFORE starting a new round of simulations here
 
 ## 1. Working directory
-setwd("/Users/Bettina/sciebo/projects/GenerationalPlacements/SimGPT/analysis/simGPT")
+setwd("/Users/bhuenteler/Library/CloudStorage/OneDrive-DIWBerlin/projects/GenerationalPlacements/SimGPT/analysis/simGPT")
 
 
 # 2. Input files (usually no need to change)
@@ -33,7 +33,7 @@ beta <- 1 # default 1
 
 # 4. Base seed (within the code, we will run i different simulations that will then automatically be starting with the base_seed + i. 
 # This will create one output folder for each i simulation)
-base_seed <- "250129" # usually set to date you conduct the simulation
+base_seed <- "251113" # usually set to date you conduct the simulation
 
 # 5. Set the size of the starting population
 size_opop <-  10000

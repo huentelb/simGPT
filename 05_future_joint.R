@@ -62,7 +62,7 @@ if (!dir.exists(folder.baseseed)) {
 }
 
 # 2. Lower level folder for cohort-max age-specific output 
-graph.folder <- paste0(folder.baseseed, cohort, "_", max_age, "/")
+graph.folder <- paste0(folder.baseseed, "joint_", max_age, "/")
 if (!dir.exists(graph.folder)) {
   # If not, create the new folder
   dir.create(graph.folder)
@@ -75,10 +75,14 @@ if (!dir.exists(graph.folder)) {
 
 #### OPEN MERGED SIMULATION FILE FOR 1960 COHORT ####
 
-load(paste0(folder.baseseed, "gp", cohort, max_age, ".RData"))
+# Laod gp data of both cohorts and store as separate dataframes with according suffix
+load(paste0(folder.baseseed, "gp1960100.RData"))
+gp60 <- gp
+load(paste0(folder.baseseed, "gp2000100.RData"))
+gp00 <- gp
 
-
-
+gp <- gp60 %>% 
+  rbind(gp00)
 
 #### SEQUENCE ANALYSIS ####
 library(TraMineR)
@@ -130,7 +134,7 @@ seq <- seqdef(gp[ac$aggIndex, 6:paste0(max_age+6)], # for max_age 100 to column 
 png(file = paste0(graph.folder, "seqD_full.png"),
     width=964, height=556)
 seqdplot(seq, border = NA, ltext = c(gpstates), with.legend = FALSE, 
-         main = paste0("Simulated Data \n (1846 - ",cohort+max_age,", ",cohort," birth cohort), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop), 
+         main = paste0("Simulated Data \n (1846 - 2100, 1960 + 2000 birth cohorts), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop), 
          missing.color = "#f7f7f7", with.missing = T)
 dev.off()
 
@@ -138,14 +142,14 @@ dev.off()
 png(file = paste0(graph.folder, "seqr100_full.png"),
     width=964, height=556)
 seqfplot(seq, border = NA, ltext = c(gpstates), with.legend = FALSE, 
-         main = paste0("Simulated Data \n (1846 - ",cohort+max_age,", ",cohort," birth cohort), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop), 
+         main = paste0("Simulated Data \n (1846 - 2100, 1960 + 2000 birth cohorts), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop), 
          missing.color = "#f7f7f7", idxs = 1:250)
 dev.off()
 
 png(file = paste0(graph.folder, "seqi100_full.png"),
     width=964, height=556)
 seqiplot(seq, border = NA, ltext = c(gpstates), with.legend = FALSE, 
-         main = paste0("Simulated Data \n (1846 - ",cohort+max_age,", ",cohort," birth cohort), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop), 
+         main = paste0("Simulated Data \n (1846 - 2100, 1960 + 2000 birth cohorts), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop), 
          missing.color = "#f7f7f7", idxs = 1:100)
 dev.off()
 
@@ -155,7 +159,7 @@ seqmeant(seq)
 png(file = paste0(graph.folder, "meant_full.png"),
     width=964, height=556)
 seqmtplot(seq, border = NA, ltext = c(gpstates), with.legend = FALSE, 
-          main = paste0("Simulated Data \n (1846 - ",cohort+max_age,", ",cohort," birth cohort), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop))
+          main = paste0("Simulated Data \n (1846 - 2100, 1960 + 2000 birth cohorts), ", het, " fertility heterogeneity, ", bint,  ", opop size = ", size_opop))
 dev.off()
 
 
@@ -203,6 +207,8 @@ chi_pam10 <- wcKMedRange(chi,
                          kvals = 2:8,
                          initialclust = chi_ward,
                          weights = ac$aggWeights)
+
+
 
 saveRDS(chi_pam10, file = paste0(graph.folder, "chipam10.RData"))
 

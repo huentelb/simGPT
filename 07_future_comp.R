@@ -44,37 +44,37 @@ gp00 <- gp
 # Means
 agg_mean <- gp60 %>% 
   rbind(gp00) %>% 
-  select(dob_year, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
+  dplyr::select(dob_year, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
   group_by(dob_year) %>% 
   summarise_all(mean, na.rm = TRUE) %>% 
   mutate(cohort = dob_year) %>% 
-  select(cohort, dage:gcage) # exchange 'cohort' for 'dob_year'
+  dplyr::select(cohort, dage:gcage) # exchange 'cohort' for 'dob_year'
 
 # Medians
 agg_p50 <- gp60 %>% 
   rbind(gp00) %>% 
-  select(dob_year, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  dplyr::select(dob_year, dage, pdage, numkids, cage, numgkids, gcage) %>% 
   group_by(dob_year) %>% 
   summarise_all(median, na.rm = TRUE) %>% 
   mutate(cohort = dob_year) %>% 
-  select(cohort, dage:gcage) %>% # exchange 'cohort' for 'dob_year'
+  dplyr::select(cohort, dage:gcage) %>% # exchange 'cohort' for 'dob_year'
   rename_with(.fn = ~ paste0(.x, "_p50"), .cols = -cohort)
 
 # SD
 agg_sd <- gp60 %>% 
   rbind(gp00) %>% 
-  select(dob_year, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  dplyr::select(dob_year, dage, pdage, numkids, cage, numgkids, gcage) %>% 
   group_by(dob_year) %>% 
   summarise_all(sd, na.rm = TRUE) %>% 
   mutate(cohort = dob_year) %>% 
-  select(cohort, dage:gcage) %>% # exchange 'cohort' for 'dob_year'
+  dplyr::select(cohort, dage:gcage) %>% # exchange 'cohort' for 'dob_year'
   rename_with(.fn = ~ paste0(.x, "_sd"), .cols = -cohort)
 
 # Combine means, medians and SD into one df
 agg <- agg_mean %>%
   left_join(agg_sd, by = "cohort") %>%
   left_join(agg_p50, by = "cohort") %>%
-  select (
+  dplyr::select (
     cohort,
     starts_with("dage"),
     starts_with("dead_p"),
@@ -93,7 +93,78 @@ tab1_agg <- agg %>%
   mutate(across(-cohort, ~ round(.x, 2))) %>%
   pivot_longer(-cohort, names_to = "variable", values_to = "value") %>%
   pivot_wider(names_from = cohort, values_from = value) %>%
-  column_to_rownames("variable") # Moves "variable" column to row names
+  column_to_rownames("variable") %>% # Moves "variable" column to row names
+  mutate(diff = NA, # columns for diff and CI upper and lower bound
+         lb = NA,
+         ub = NA)
+
+
+
+# Add significance test for difference
+gp_boot <- gp60 %>% 
+  rbind(gp00) %>% 
+  dplyr::select(dob_year, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
+  mutate(cohort = dob_year) 
+
+# bootstrapped means
+library(tidyverse)
+library(mosaic)
+
+
+b <- 1000 # number of samples for bootstrapping
+
+# Bootstrapping MEANS
+for (i in (c("dage", "dead_p", "pdage", "isparent", "numkids", "cage", "isgparent", "numgkids", "gcage"))) {
+
+  set.seed(123456) # put into loop to get same samples across all indicators
+  formula <- as.formula(paste(i, "~ cohort"))
+
+  gp_boot_mean <- do(b)*mean(formula, na.rm = TRUE, data = mosaic::resample(gp_boot))
+  gp_boot_mean <- gp_boot_mean %>%
+    mutate(diff = X1960-X2000)
+
+  # add CI to Table 1
+  tab1_agg[i,3] <- round(tab1_agg[i,1]-tab1_agg[i,2],2) #mean(gp_boot_mean$diff)
+  tab1_agg[i,4:5] <- round(confint(gp_boot_mean$diff, level = 0.95),2) #same as quantile(gp_boot_mean$diff, c(0.025, 0.975))
+
+
+}
+
+# Bootstrapping SD
+for (i in (c("dage", "pdage", "numkids", "cage", "numgkids", "gcage"))) {
+  
+  set.seed(123456)
+  formula <- as.formula(paste(i, "~ cohort"))
+  
+  gp_boot_sd <- do(b)*sd(formula, na.rm = TRUE, data = mosaic::resample(gp_boot))
+  gp_boot_sd <- gp_boot_sd %>%
+    mutate(diff = X1960-X2000)
+  
+  # add CI to Table 1
+  tab1_agg[paste0(i,"_sd"),3] <- round(tab1_agg[paste0(i,"_sd"),1]-tab1_agg[paste0(i,"_sd"),2],2) #mean(gp_boot_mean$diff)
+  tab1_agg[paste0(i,"_sd"),4:5] <- round(confint(gp_boot_sd$diff, level = 0.95),2)
+  
+}
+
+### HERE IS SOMETHING STILL OFF! ####
+# Bootstrapping MEDIANS
+for (i in (c("dage", "pdage", "numkids", "cage", "numgkids", "gcage"))) {
+  
+  set.seed(123456) 
+  formula <- as.formula(paste(i, "~ cohort"))
+  
+  gp_boot_p50 <- do(b)*median(formula, na.rm = TRUE, data = mosaic::resample(gp_boot))
+  gp_boot_p50 <- gp_boot_p50 %>%
+    mutate(diff = X1960-X2000)
+  
+  # add CI to Table 1
+  tab1_agg[paste0(i,"_p50"),3] <- round(tab1_agg[paste0(i,"_p50"),1]-tab1_agg[paste0(i,"_p50"),2],2) #mean(gp_boot_mean$diff)
+  tab1_agg[paste0(i,"_p50"),4:5] <- round(confint(gp_boot_p50$diff, level = 0.95),2)
+  
+}
+
+
+
 
 # Number of observations
 tab1_n <- gp60 %>%
@@ -103,6 +174,10 @@ tab1_n <- gp60 %>%
   pivot_wider(names_from = cohort, values_from = n)
 
 rownames(tab1_n) <- "N"
+
+
+
+
 
 
 ### DEFINE SEQUENCES ####
@@ -180,16 +255,16 @@ indic00 <- seqindic(seq00, indic=c("lgth", "visited", "visitp", "transp", # leng
 
 # store mean across full sample
 indic_mean60 <- indic60 %>%
-  summarise(round(across(everything(), \(x) mean(x, na.rm = TRUE)),2)) %>% 
+  summarise(round(across(everything(), \(x) mean(x, na.rm = TRUE)),3)) %>% 
   mutate(cohort = 1960) %>% 
-  select(-Visited) %>% 
-  select(cohort, Lgth:Cplx)
+  dplyr::select(-Visited) %>%
+  dplyr::select(cohort, Lgth:Cplx)
 
 indic_mean00 <- indic00 %>%
-  summarise(round(across(everything(), \(x) mean(x, na.rm = TRUE)),2)) %>% 
+  summarise(round(across(everything(), \(x) mean(x, na.rm = TRUE)),3)) %>% 
   mutate(cohort = 2000) %>% 
-  select(-Visited) %>% 
-  select(cohort, Lgth:Cplx)
+  dplyr::select(-Visited) %>% 
+  dplyr::select(cohort, Lgth:Cplx)
 
 indic_mean <- indic_mean60 %>% 
   rbind(indic_mean00) 
@@ -198,7 +273,34 @@ indic_mean <- indic_mean60 %>%
 tab1_ind <- indic_mean %>%
   pivot_longer(-cohort, names_to = "variable", values_to = "value") %>%
   pivot_wider(names_from = cohort, values_from = value) %>%
-  column_to_rownames("variable")
+  column_to_rownames("variable") %>% 
+  mutate(pval = NA)
+
+
+# Add significance test for difference
+indic_t60 <- indic60 %>% 
+  mutate(cohort = 1960)
+indic_t00 <- indic00 %>% 
+  mutate(cohort = 2000)
+indic_t <- indic_t60 %>% 
+  rbind(indic_t00)
+
+
+t1 <- t.test(Lgth ~ cohort, data = indic_t)
+t2 <- t.test(Visitp ~ cohort, data = indic_t)
+t3 <- t.test(Transp ~ cohort, data = indic_t)
+t4 <- t.test(Entr ~ cohort, data = indic_t)
+t5 <- t.test(MeanD ~ cohort, data = indic_t)
+t6 <- t.test(Dustd ~ cohort, data = indic_t)
+t7 <- t.test(Cplx ~ cohort, data = indic_t)
+
+tab1_ind[1,3] <- round(t1[["p.value"]], 4)
+tab1_ind[2,3] <- round(t2[["p.value"]], 4)
+tab1_ind[3,3] <- round(t3[["p.value"]], 4)
+tab1_ind[4,3] <- round(t4[["p.value"]], 4)
+tab1_ind[5,3] <- round(t5[["p.value"]], 4)
+tab1_ind[6,3] <- round(t6[["p.value"]], 4)
+tab1_ind[7,3] <- round(t7[["p.value"]], 4)
 
 
 
@@ -241,6 +343,31 @@ colnames(gp_mt00) <- "2000"
 tab1_mt <- gp_mt60 %>% 
   cbind(gp_mt00) %>% 
   as.data.frame() 
+
+#### continue here ####
+# Bootstrapping mean time
+gp_boot60 <- seq60 %>% 
+  mutate(cohort=1960)
+gp_boot00 <- seq00 %>% 
+  mutate(cohort=2000) 
+
+gp_boot <- gp_boot60 %>% 
+  rbind(gp_boot00)
+
+set.seed(123456) # put into loop to get same samples across all indicators
+gp_boot_mt <- do(100)*seqmeant(mosaic::resample(seq60))
+
+
+  gp_boot_mean <- gp_boot_mean %>%
+    mutate(diff = X1960-X2000)
+  
+  # add CI to Table 1
+  tab1_agg[i,3] <- round(tab1_agg[i,1]-tab1_agg[i,2],2) #mean(gp_boot_mean$diff)
+  tab1_agg[i,4:5] <- round(confint(gp_boot_mean$diff, level = 0.95),2)
+  
+}
+
+
 
 
 #### CREATE TAB 1 ####
@@ -290,7 +417,7 @@ gp00 <- gp
 # Means
 agg_mean <- gp60 %>% 
   rbind (gp00) %>%
-  select (dob_year, chi, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
+  dplyr::select (dob_year, chi, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
   mutate(cohort = dob_year) %>% 
   group_by(chi, cohort) %>%
   summarise_all (mean, na.rm = TRUE)
@@ -298,7 +425,7 @@ agg_mean <- gp60 %>%
 # Medians (for cont vars)
 agg_p50 <- gp60 %>% 
   rbind (gp00) %>%
-  select (dob_year, chi, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  dplyr::select (dob_year, chi, dage, pdage, numkids, cage, numgkids, gcage) %>% 
   mutate(cohort = dob_year) %>% 
   group_by(chi, cohort) %>%
   summarise_all (median, na.rm = TRUE) %>% 
@@ -307,7 +434,7 @@ agg_p50 <- gp60 %>%
 # SD (for cont vars)
 agg_sd <- gp60 %>% 
   rbind (gp00) %>%
-  select (dob_year, chi, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  dplyr::select (dob_year, chi, dage, pdage, numkids, cage, numgkids, gcage) %>% 
   mutate(cohort = dob_year) %>% 
   group_by(chi, cohort) %>%
   summarise_all (sd, na.rm = TRUE) %>% 
@@ -317,7 +444,7 @@ agg_sd <- gp60 %>%
 agg <- agg_mean %>%
   left_join(agg_sd, by = c("cohort", "chi")) %>% 
   left_join(agg_p50, by = c("cohort", "chi")) %>% 
-  select( 
+  dplyr::select( 
     cohort, 
     starts_with("dage"), 
     starts_with("dead_p"), 
@@ -343,7 +470,7 @@ tab3_agg <- agg_round %>%
   unite("group", chi, cohort, sep = "_") %>% # combine chi and cohort into a single column
   pivot_wider(names_from = group, values_from = value) %>% 
   column_to_rownames("variable") %>% 
-  select(
+  dplyr::select(
     starts_with("Cluster 1"),
     starts_with("Cluster 2"),
     starts_with("Cluster 3"),
@@ -364,7 +491,7 @@ tab3_n <- gp60 %>%
   unite("group", chi, cohort, sep = "_") %>% 
   pivot_wider(names_from = group, values_from = value) %>% 
   column_to_rownames("variable") %>%
-  select(
+  dplyr::select(
     starts_with("Cluster 1"),
     starts_with("Cluster 2"),
     starts_with("Cluster 3"),

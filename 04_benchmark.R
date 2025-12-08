@@ -140,6 +140,74 @@ tab1_agg <- agg %>%
   pivot_wider(names_from = source, values_from = value) %>%
   column_to_rownames("variable") # Moves "variable" column to row names
 
+
+
+
+# Add significance test for difference
+gp_boot <- gp60 %>% 
+  rbind(gp00) %>% 
+  dplyr::select(dob_year, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
+  mutate(cohort = dob_year) 
+
+# bootstrapped means
+library(tidyverse)
+library(mosaic)
+
+
+b <- 1000 # number of samples for bootstrapping
+
+# Bootstrapping MEANS
+for (i in (c("dage", "dead_p", "pdage", "isparent", "numkids", "cage", "isgparent", "numgkids", "gcage"))) {
+  
+  set.seed(123456) # put into loop to get same samples across all indicators
+  formula <- as.formula(paste(i, "~ cohort"))
+  
+  gp_boot_mean <- do(b)*mean(formula, na.rm = TRUE, data = mosaic::resample(gp_boot))
+  gp_boot_mean <- gp_boot_mean %>%
+    mutate(diff = X1960-X2000)
+  
+  # add CI to Table 1
+  tab1_agg[i,3] <- round(tab1_agg[i,1]-tab1_agg[i,2],2) #mean(gp_boot_mean$diff)
+  tab1_agg[i,4:5] <- round(confint(gp_boot_mean$diff, level = 0.95),2) #same as quantile(gp_boot_mean$diff, c(0.025, 0.975))
+  
+  
+}
+
+# Bootstrapping SD
+for (i in (c("dage", "pdage", "numkids", "cage", "numgkids", "gcage"))) {
+  
+  set.seed(123456)
+  formula <- as.formula(paste(i, "~ cohort"))
+  
+  gp_boot_sd <- do(b)*sd(formula, na.rm = TRUE, data = mosaic::resample(gp_boot))
+  gp_boot_sd <- gp_boot_sd %>%
+    mutate(diff = X1960-X2000)
+  
+  # add CI to Table 1
+  tab1_agg[paste0(i,"_sd"),3] <- round(tab1_agg[paste0(i,"_sd"),1]-tab1_agg[paste0(i,"_sd"),2],2) #mean(gp_boot_mean$diff)
+  tab1_agg[paste0(i,"_sd"),4:5] <- round(confint(gp_boot_sd$diff, level = 0.95),2)
+  
+}
+
+### HERE IS SOMETHING STILL OFF! ####
+# Bootstrapping MEDIANS
+for (i in (c("dage", "pdage", "numkids", "cage", "numgkids", "gcage"))) {
+  
+  set.seed(123456) 
+  formula <- as.formula(paste(i, "~ cohort"))
+  
+  gp_boot_p50 <- do(b)*median(formula, na.rm = TRUE, data = mosaic::resample(gp_boot))
+  gp_boot_p50 <- gp_boot_p50 %>%
+    mutate(diff = X1960-X2000)
+  
+  # add CI to Table 1
+  tab1_agg[paste0(i,"_p50"),3] <- round(tab1_agg[paste0(i,"_p50"),1]-tab1_agg[paste0(i,"_p50"),2],2) #mean(gp_boot_mean$diff)
+  tab1_agg[paste0(i,"_p50"),4:5] <- round(confint(gp_boot_p50$diff, level = 0.95),2)
+  
+}
+
+
+
 # Number of observations
 tab1_n <- gpe %>%
   rbind(gpm) %>% 
