@@ -137,75 +137,81 @@ agg <- agg_mean %>%
 tab1_agg <- agg %>%
   mutate(across(-source, ~ round(.x, 2))) %>%
   pivot_longer(-source, names_to = "variable", values_to = "value") %>%
-  pivot_wider(names_from = source, values_from = value) %>%
-  column_to_rownames("variable") # Moves "variable" column to row names
-
-
+  pivot_wider(names_from = source, values_from = value) 
 
 
 # Add significance test for difference
-gp_boot <- gp60 %>% 
-  rbind(gp00) %>% 
+gp_boot <- gpe %>% 
+  rbind(gpm) %>% 
   dplyr::select(dob_year, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
   mutate(cohort = dob_year) 
 
 # bootstrapped means
 library(tidyverse)
-library(mosaic)
+library(purrr)
 
-
-b <- 1000 # number of samples for bootstrapping
-
-# Bootstrapping MEANS
-for (i in (c("dage", "dead_p", "pdage", "isparent", "numkids", "cage", "isgparent", "numgkids", "gcage"))) {
+# build function for bootstrapping mean, sd and median
+boot_ci_diff <- function(df, var) {
   
-  set.seed(123456) # put into loop to get same samples across all indicators
-  formula <- as.formula(paste(i, "~ cohort"))
+  reps  <- 1000 # number of sampling
+  probs <- c(0.5, 0.025, 0.975) # quantiles: mean diff, upper and lower 95% CI
   
-  gp_boot_mean <- do(b)*mean(formula, na.rm = TRUE, data = mosaic::resample(gp_boot))
-  gp_boot_mean <- gp_boot_mean %>%
-    mutate(diff = X1960-X2000)
+  # calculate three different summary statistics
+  stats <- list(
+    mean   = function(x) mean(x, na.rm = TRUE),
+    sd     = function(x) sd(x, na.rm = TRUE),
+    p50 = function(x) median(x, na.rm = TRUE)
+  )
   
-  # add CI to Table 1
-  tab1_agg[i,3] <- round(tab1_agg[i,1]-tab1_agg[i,2],2) #mean(gp_boot_mean$diff)
-  tab1_agg[i,4:5] <- round(confint(gp_boot_mean$diff, level = 0.95),2) #same as quantile(gp_boot_mean$diff, c(0.025, 0.975))
+  # one summary statistic per row
+  summary <- lapply(names(stats), function(s) {
+    
+    # store different quantiles
+    qs <- replicate(reps, {
+      resampled <- df[sample(nrow(df), replace = TRUE), ] # draw random samples with replacement
+      
+      # split random samples by group (cohort)
+      x1 <- resampled[[var]][resampled$source == "Register"] #check
+      x2 <- resampled[[var]][resampled$source == "Microsimulated"]
+      
+      # calculate difference of the statistics s between groups (x1 and x2) 
+      stats[[s]](x1) - stats[[s]](x2)
+    }) %>% 
+      quantile(probs = probs, na.rm = TRUE) # calculate quantiles as defined above
+    
+    # how to structure output
+    tibble(
+      stat = s,
+      diff = round(qs[1],2),
+      lb  = round(qs[2],2),
+      ub = round(qs[3],2)
+    )
+  })
   
-  
+  dplyr::bind_rows(summary)
 }
 
-# Bootstrapping SD
-for (i in (c("dage", "pdage", "numkids", "cage", "numgkids", "gcage"))) {
-  
-  set.seed(123456)
-  formula <- as.formula(paste(i, "~ cohort"))
-  
-  gp_boot_sd <- do(b)*sd(formula, na.rm = TRUE, data = mosaic::resample(gp_boot))
-  gp_boot_sd <- gp_boot_sd %>%
-    mutate(diff = X1960-X2000)
-  
-  # add CI to Table 1
-  tab1_agg[paste0(i,"_sd"),3] <- round(tab1_agg[paste0(i,"_sd"),1]-tab1_agg[paste0(i,"_sd"),2],2) #mean(gp_boot_mean$diff)
-  tab1_agg[paste0(i,"_sd"),4:5] <- round(confint(gp_boot_sd$diff, level = 0.95),2)
-  
-}
+# apply function to following vars
+vars <- c("dage", "dead_p", "pdage", "isparent", "numkids", "cage", "isgparent", "numgkids", "gcage")
 
-### HERE IS SOMETHING STILL OFF! ####
-# Bootstrapping MEDIANS
-for (i in (c("dage", "pdage", "numkids", "cage", "numgkids", "gcage"))) {
-  
-  set.seed(123456) 
-  formula <- as.formula(paste(i, "~ cohort"))
-  
-  gp_boot_p50 <- do(b)*median(formula, na.rm = TRUE, data = mosaic::resample(gp_boot))
-  gp_boot_p50 <- gp_boot_p50 %>%
-    mutate(diff = X1960-X2000)
-  
-  # add CI to Table 1
-  tab1_agg[paste0(i,"_p50"),3] <- round(tab1_agg[paste0(i,"_p50"),1]-tab1_agg[paste0(i,"_p50"),2],2) #mean(gp_boot_mean$diff)
-  tab1_agg[paste0(i,"_p50"),4:5] <- round(confint(gp_boot_p50$diff, level = 0.95),2)
-  
-}
+diffs_boot <- map_dfr( # rowbind output of function
+  vars,
+  ~ boot_ci_diff(gp_boot, .x) %>% 
+    mutate(var = .x, .before = 1)) 
 
+# adjust names from diffs_boot table to match tab1 
+diffs_boot_tab1 <- diffs_boot %>% 
+  mutate(suffix = ifelse(stat == "mean", "", 
+                         ifelse(stat == "sd", "_sd", "_p50")),
+         variable = paste0(var, suffix)) %>% 
+  dplyr::select(variable, diff, lb, ub)
+
+
+
+tab1_agg <- merge(tab1_agg, diffs_boot_tab1, 
+                  by = "variable", 
+                  sort = FALSE) %>% 
+  column_to_rownames("variable") # Moves "variable" column to row names
 
 
 # Number of observations
@@ -213,7 +219,10 @@ tab1_n <- gpe %>%
   rbind(gpm) %>% 
   count(source) %>% 
   pivot_wider(names_from = source, values_from = n) %>% 
-  as.data.frame()
+  mutate(diff = NA, 
+         lb = NA, 
+         ub = NA) %>% 
+  as.data.frame
 
 rownames(tab1_n) <- "N"
 
@@ -319,9 +328,48 @@ indic_mean <- indic_meane %>%
 # Swap rows and columns of indic_mean
 tab1_ind <- indic_mean %>%
   pivot_longer(-source, names_to = "variable", values_to = "value") %>%
-  pivot_wider(names_from = source, values_from = value) %>%
-  column_to_rownames("variable")
+  pivot_wider(names_from = source, values_from = value)
 
+
+
+# Bootstrapping for sequence indicators
+boot_seqind_diff <- function(seq_e, seq_m, var) {
+  
+  reps  <- 1000 # number of sampling
+  probs <- c(0.5, 0.025, 0.975) # quantiles: mean diff, upper and lower 95% CI
+  
+  boot_diffs <- replicate(reps, {
+    
+    resampled1 <- seq_1960[sample(nrow(seq_e), replace = TRUE),]
+    resampled2 <- seq_2000[sample(nrow(seq_m), replace = TRUE),]
+    
+    # select one indicator at a time
+    x1 <- as.numeric(resampled1[[var]])
+    x2 <- as.numeric(resampled2[[var]])
+    
+    mean(x1, na.rm = TRUE) - mean(x2, na.rm = TRUE)
+  })
+  
+  qs <- quantile(boot_diffs, probs = probs, na.rm = TRUE)
+  
+  # how to structure output
+  tibble(
+    diff = round(qs[1],2),
+    lb  = round(qs[2],2),
+    ub = round(qs[3],2)
+  )}
+
+seqind_names <- c("Lgth", "Visitp", "Transp", "Entr", "MeanD", "DustD", "Cplx")
+
+diffs_indic <- map_dfr( # rowbind output of function
+  seqind_names,
+  ~ boot_seqind_diff(seq_e = indice, 
+                     seq_m = indicm, .x) %>% 
+    mutate(var = .x, .before = 1)) 
+
+tab1_ind <- cbind(tab1_ind, diffs_indic) %>% 
+  dplyr::select(-var) %>% 
+  column_to_rownames("variable") # Moves "variable" column to row names
 
 
 ##### BIC & LRT ####
@@ -361,6 +409,42 @@ colnames(gp_mtm) <- "Microsimulation"
 tab1_mt <- gp_mte %>% 
   cbind(gp_mtm) %>% 
   as.data.frame() 
+
+
+boot_ci_seqmeant <- function(seq_e, seq_m) {
+  
+  reps  <- 1000
+  probs <- c(0.5, 0.025, 0.975)
+  
+  boot_mat <- replicate(reps, {
+    
+    idx1 <- sample(seq_len(nrow(seq_e)), replace = TRUE)
+    idx2 <- sample(seq_len(nrow(seq_m)), replace = TRUE)
+    
+    m1 <- TraMineR::seqmeant(seq_e[idx1, ])
+    m2 <- TraMineR::seqmeant(seq_m[idx2, ])
+    
+    as.numeric(m1 - m2)   # Vektor der Länge 6
+  })
+  
+  # Zeilenweise Quantile → Ergebnis: 6 × 3
+  qs <- t(apply(boot_mat, 1, quantile, probs = probs, na.rm = TRUE))
+  
+  tibble(
+    state = seq_len(nrow(qs)),
+    diff  = round(qs[, 1],2),
+    lb   = round(qs[, 2],2),
+    ub  = round(qs[, 3],2)
+  )
+}
+
+diffs_mt <- boot_ci_seqmeant(
+  seq_e = seqe,
+  seq_m = seqm
+)
+
+tab1_mt <- cbind(tab1_mt, diffs_mt) %>% 
+  dplyr::select(-state)
 
 
 ##### CREATE TAB 1 ####
