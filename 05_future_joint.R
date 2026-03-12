@@ -14,7 +14,8 @@ library(tidyverse)
 library(flextable)
 
 # 1. Upper level folder based on simulation base_seed
-folder.baseseed <- paste0(folder,"/sim_results_", supfile, "_",base_seed,"_/")
+# folder.baseseed <- paste0(folder,"/sim_results_", supfile, "_",base_seed,"_/")
+folder.baseseed <- paste0(folder,"/sim_results_", base_seed,"_/")
 if (!dir.exists(folder.baseseed)) {
   # If not, create the new folder
   dir.create(folder.baseseed)
@@ -32,8 +33,9 @@ ages <- as.character(c(0:max_age))
 for (c in c(1960, 2000)) {
   
   for (i in c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) {
+    # load(paste0(folder, "/sim_results_", supfile, "_",base_seed,i,"_/gp", c, max_age, ".RData"))
     
-    load(paste0(folder, "/sim_results_", supfile, "_",base_seed,i,"_/gp", c, max_age, ".RData"))
+    load(paste0(folder, "/sim_results_", base_seed,i,"_/gp", c, max_age, ".RData"))
     assign(paste0("gp_", i), gp)  
     }
     
@@ -52,7 +54,7 @@ for (c in c(1960, 2000)) {
 # Generate folders to store results
 
 # 1. Upper level folder based on simulation base_seed
-folder.baseseed <- paste0(folder,"/sim_results_", supfile, "_",base_seed,"_/")
+folder.baseseed <- paste0(folder,"/sim_results_", base_seed,"_/")
 if (!dir.exists(folder.baseseed)) {
   # If not, create the new folder
   dir.create(folder.baseseed)
@@ -188,8 +190,8 @@ chi_ward <- hclust(as.dist(chi), method = "ward.D")
 #omt_ward <- hclust(as.dist(omt), method = "ward.D")
 #omc_ward <- hclust(as.dist(omc), method = "ward.D")
 
-# chi_ward10 <- as.clustrange(chi_ward, diss = chi, ncluster = 10, weigths = ac$aggWeights)
-# saveRDS(chi_ward10, file = paste0(graph.folder, "chiward10.RData"))
+chi_ward10 <- as.clustrange(chi_ward, diss = chi, ncluster = 10, weigths = ac$aggWeights)
+saveRDS(chi_ward10, file = paste0(graph.folder, "chiward10.RData"))
 
 chi_ward10 <- readRDS(paste0(graph.folder, "chiward10.RData"))
 
@@ -433,13 +435,13 @@ seqmtplot(seq, group = gp$chi, border = NA,
           ltext = c(gpstates), 
           missing.color = "#f7f7f7", with.legend = FALSE)
 dev.off()
-
-png(file = paste0(graph.folder, "seqr_8_lab.png"),
-    width=w, height=h)
-seqrplot(seq, group = gp$chi, border = NA,
-         ltext = c(gpstates), 
-         missing.color = "#f7f7f7", with.legend = FALSE, diss = chi)
-dev.off()
+# 
+# png(file = paste0(graph.folder, "seqr_8_lab.png"),
+#     width=w, height=h)
+# seqrplot(seq, group = gp$chi, border = NA,
+#          ltext = c(gpstates), 
+#          missing.color = "#f7f7f7", with.legend = FALSE, diss = chi)
+# dev.off()
 
 
 ### Relative frequency plot ####
@@ -1005,13 +1007,13 @@ gp_reg <- gp %>%
                        labels = c("1960",
                                   "2000")),
     chi = factor(chi,
-                 labels = c("C1 - 3 gen",
-                            "C2 - 3 via 4gen",
+                 labels = c("C1 - 3-gen",
+                            "C2 - 3- via 4-gen",
                             "C3 - Non-parent",
-                            "C4 - 3 via 2gen",
-                            "C5 - 4 gen",
-                            "C6 - 3 gen, early death",
-                            "C7 - 2 gen",
+                            "C4 - 3- via 2-gen",
+                            "C5 - 4-gen",
+                            "C6 - 3-gen, early death",
+                            "C7 - 2-gen",
                             "C8 - Non-parent, early death")),
   ) %>% 
   dplyr::select(chi, cohort)
@@ -1029,19 +1031,25 @@ ggeffect(fit_basic, terms = "cohort", ci_level = 0.95) %>%
 contrast <- avg_comparisons(fit_basic)
 
 pdf(paste0(graph.folder, "contrast.pdf"), 
-    width = 8, height = 9)
+    width = 8, height = 6)
 ggplot(data = contrast,
-       aes(x = estimate, y = group)) +
+       aes(x = estimate, 
+           y = group)) +
   geom_vline(xintercept = 0, color = "darkred") +
   geom_point() +
   geom_errorbar(aes(xmin = conf.low,
                     xmax = conf.high),
-                width = 0.2) +
+                width = 0.15) +
   labs(
     x = "Contrast: 2000 - 1960 birth cohort",
-    y = "Cluster"
+    y = ""
   )+
-  theme_minimal()
+  scale_y_discrete(limits = rev(levels(contrast$group))) + # reverse order of displayed clusters
+  theme_minimal() +
+  theme(
+    axis.text = element_text(color = "black", size = 11),  
+    axis.title = element_text(color = "black", size = 11)   
+  )
 dev.off()
 
 # Save results

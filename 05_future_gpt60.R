@@ -14,7 +14,7 @@ library(tidyverse)
 library(flextable)
 
 # 1. Upper level folder based on simulation base_seed
-folder.baseseed <- paste0(folder,"/sim_results_", supfile, "_",base_seed,"_/")
+folder.baseseed <- paste0(folder,"/sim_results_", base_seed,"_/")
 if (!dir.exists(folder.baseseed)) {
   # If not, create the new folder
   dir.create(folder.baseseed)
@@ -28,31 +28,10 @@ cohort <- 1960
 max_age <- 100
 ages <- as.character(c(0:max_age))
 
-# load the gp-data for from each simulation from each birth cohorts
-for (c in c(1960, 2000)) {
-  
-  for (i in c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) {
-    
-    load(paste0(folder, "/sim_results_", supfile, "_",base_seed,i,"_/gp", c, max_age, ".RData"))
-    assign(paste0("gp_", i), gp)  
-    }
-    
-  # merge the simulations into one gp-dataframe for each birth cohort
-  gp <- rbind(gp_1, gp_2, gp_3, gp_4, gp_5, gp_6, gp_7, gp_8, gp_9, gp_10)
-    
-    
-  # store combined gp dataframe in base_seed folder
-  save(gp, file = paste0(folder.baseseed, "gp", c, max_age, ".RData"))
-  
-}
-
-
-
-
 # Generate folders to store results
 
 # 1. Upper level folder based on simulation base_seed
-folder.baseseed <- paste0(folder,"/sim_results_", supfile, "_",base_seed,"_/")
+folder.baseseed <- paste0(folder,"/sim_results_", base_seed,"_/")
 if (!dir.exists(folder.baseseed)) {
   # If not, create the new folder
   dir.create(folder.baseseed)
@@ -365,8 +344,8 @@ mc.factor <- factor(mc, levels = c(med1, med2, med3, med4, med5, med6),
 
 # store labels as values for later use
 l1 <- as.character(paste0("Cluster 1 -\n 3-gen family (", propmed1, "%)"))
-l2 <- as.character(paste0("Cluster 2 -\n 3-gen (via 2-gen) family (", propmed2, "%)"))
-l3 <- as.character(paste0("Cluster 3 -\n 4-gen family (", propmed3, "%)"))
+l2 <- as.character(paste0("Cluster 2 -\n 4-gen family (", propmed2, "%)"))
+l3 <- as.character(paste0("Cluster 3 -\n 3-gen (via 2-gen) family (", propmed3, "%)"))
 l4 <- as.character(paste0("Cluster 4 -\n 2-gen family/fuzzy (", propmed4, "%)"))
 l5 <- as.character(paste0("Cluster 5 -\n Non-parent (", propmed5, "%)"))
 l6 <- as.character(paste0("Cluster 6 -\n Non-parent + early death (", propmed6, "%)"))
@@ -425,12 +404,12 @@ seqmtplot(seq, group = gp$chi, border = NA,
           missing.color = "#f7f7f7", with.legend = FALSE)
 dev.off()
 
-png(file = paste0(graph.folder, "seqr_6_lab.png"),
-    width=w, height=h)
-seqrplot(seq, group = gp$chi, border = NA,
-         ltext = c(gpstates), 
-         missing.color = "#f7f7f7", with.legend = FALSE, diss = chi)
-dev.off()
+# png(file = paste0(graph.folder, "seqr_6_lab.png"),
+#     width=w, height=h)
+# seqrplot(seq, group = gp$chi, border = NA,
+#          ltext = c(gpstates), 
+#          missing.color = "#f7f7f7", with.legend = FALSE, diss = chi)
+# dev.off()
 
 
 ### Relative frequency plot ####
@@ -894,6 +873,7 @@ indic_mean60c <- indic1 %>%
 # Swap rows and columns of indic_mean
 tab_ind_clusters60 <- as.data.frame(t(indic_mean60c))
 
+
 # Store as docx
 set_flextable_defaults(
   font.size = 11,
@@ -904,7 +884,7 @@ set_flextable_defaults(
 ind_cl60 <- flextable(tab_ind_clusters60)  
 ind_cl60
 
-save_as_docx(ind_cl60, path = paste0(folder.baseseed, "Tab3_ind_cl60.docx"), align = "left")
+save_as_docx(ind_cl60, path = paste0(folder.baseseed, "Tab2_ind_cl60.docx"), align = "left")
 
 
 ### last line ###

@@ -10,7 +10,9 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-library(tidyverse) 
+library(tidyverse)
+library(flextable)
+
 
 cohort <- 2000
 max_age <- 100
@@ -19,7 +21,9 @@ ages <- as.character(c(0:max_age))
 # Generate folders to store results
 
 # 1. Upper level folder based on simulation base_seed
-folder.baseseed <- paste0(folder,"/sim_results_", supfile, "_",base_seed,"_/")
+# folder.baseseed <- paste0(folder,"/sim_results_", supfile, "_",base_seed,"_/")
+
+folder.baseseed <- paste0(folder,"/sim_results_", base_seed,"_/")
 if (!dir.exists(folder.baseseed)) {
   # If not, create the new folder
   dir.create(folder.baseseed)
@@ -311,17 +315,17 @@ dev.off()
 # identify medoids sorted by frequency and then by similar clusters in 60s cohort
 mc <- chi_pam10$clustering$cluster5[ac$disaggIndex]
 med <- as.data.frame(sort(table(mc), decreasing = TRUE))
-med1 <- as.character(med[1,1])
-med2 <- as.character(med[4,1])
-med3 <- as.character(med[3,1])
-med4 <- as.character(med[5,1])
-med5 <- as.character(med[2,1])
+med1 <- as.character(med[1,1]) # 3 gen
+med2 <- as.character(med[3,1]) # 4 gen
+med3 <- as.character(med[4,1]) # 3 gen via 2 gen
+med4 <- as.character(med[5,1]) # 2 gen fuzzy
+med5 <- as.character(med[2,1]) # non-parent
 
 # store size of clusters for each cluster to add to titles
 propmed <- as.data.frame(sort(prop.table(table(mc)), decreasing = TRUE))
 propmed1 <- round(propmed[1,2], digits = 2)*100
-propmed2 <- round(propmed[4,2], digits = 2)*100
-propmed3 <- round(propmed[3,2], digits = 2)*100
+propmed2 <- round(propmed[3,2], digits = 2)*100
+propmed3 <- round(propmed[4,2], digits = 2)*100
 propmed4 <- round(propmed[5,2], digits = 2)*100
 propmed5 <- round(propmed[2,2], digits = 2)*100
 
@@ -332,8 +336,8 @@ mc.factor <- factor(mc, levels = c(med1, med2, med3, med4, med5),
 
 # store labels as values for later use
 l1 <- as.character(paste0("Cluster 1 -\n 3-gen family (", propmed1, "%)"))
-l2 <- as.character(paste0("Cluster 2 -\n 3-gen (via 2-gen) family (", propmed2, "%)"))
-l3 <- as.character(paste0("Cluster 3 -\n 4-gen family (", propmed3, "%)"))
+l2 <- as.character(paste0("Cluster 2 -\n 4-gen family (", propmed2, "%)"))
+l3 <- as.character(paste0("Cluster 3 -\n 3-gen (via 2-gen) family (", propmed3, "%)"))
 l4 <- as.character(paste0("Cluster 4 -\n 2-gen family/fuzzy (", propmed4, "%)"))
 l5 <- as.character(paste0("Cluster 5 -\n Non-parent (", propmed5, "%)"))
 
@@ -388,12 +392,12 @@ seqmtplot(seq, group = gp$chi, border = NA,
           missing.color = "#f7f7f7", with.legend = FALSE)
 dev.off()
 
-png(file = paste0(graph.folder, "seqr_5_lab.png"),
-    width=w, height=h)
-seqrplot(seq, group = gp$chi, border = NA,
-         ltext = c(gpstates), 
-         missing.color = "#f7f7f7", with.legend = FALSE, diss = chi)
-dev.off()
+# png(file = paste0(graph.folder, "seqr_5_lab.png"),
+#     width=w, height=h)
+# seqrplot(seq, group = gp$chi, border = NA,
+#          ltext = c(gpstates), 
+#          missing.color = "#f7f7f7", with.legend = FALSE, diss = chi)
+# dev.off()
 
 
 
@@ -814,7 +818,7 @@ set_flextable_defaults(
 ind_cl00 <- flextable(tab_ind_clusters00)  
 ind_cl00
 
-save_as_docx(ind_cl00, path = paste0(folder.baseseed, "Tab3_ind_cl00.docx"), align = "left")
+save_as_docx(ind_cl00, path = paste0(folder.baseseed, "Tab2_ind_cl00.docx"), align = "left")
 
 
 ### last line ###
