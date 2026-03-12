@@ -33,7 +33,7 @@ beta <- 1 # default 1
 
 # 4. Base seed (within the code, we will run i different simulations that will then automatically be starting with the base_seed + i. 
 # This will create one output folder for each i simulation)
-base_seed <- "251113" # usually set to date you conduct the simulation
+base_seed <- "260311" # usually set to date you conduct the simulation
 
 # 5. Set the size of the starting population
 size_opop <-  10000

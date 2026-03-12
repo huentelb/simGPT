@@ -73,35 +73,33 @@ write.table(presim.omar, "presim.omar", row.names = F, col.names = F)
 ## RUN SOCSIM SIMULATION
 
 # start loop for simulation rounds
-for (i in c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) {
+#for (i in c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) {
 
 
 # Automatically set a new seed for each simulation in i based on base_seed
-  seed <- paste0(base_seed,i)
-
+#  seed <- paste0(base_seed,i)
+seed <- paste0(base_seed, 10)
 
 # Record starting time 
 start <- Sys.time()
 # Run a single SOCSIM-simulation with a given folder and the provided supervisory file
 # using the "future" process method
 rsocsim::socsim(folder, supfile, seed, process_method = "future")
+
+
+## IMPORT OUTPUTS TO R
+# Read the opop file using the read_opop function
+opop <- rsocsim::read_opop(fn = paste0(folder, "/sim_results_", seed, "_/result.opop"))
+
+
+# Read the omar file using the read_opop function
+omar <- rsocsim::read_omar(fn = paste0(folder, "/sim_results_", seed, "_/result.omar"))
+
 # Record ending time
 end <- Sys.time()
 
 # Store duration
 duration <- difftime(end, start, unit = "hours")
-
-## IMPORT OUTPUTS TO R
-# Read the opop file using the read_opop function
-opop <- rsocsim::read_opop(folder = getwd(), supfile = supfile, 
-                           seed = seed, suffix = "",  fn = NULL)
-
-
-# Read the omar file using the read_opop function
-omar <- rsocsim::read_omar(folder = getwd(), supfile = supfile, 
-                           seed = seed, suffix = "",  fn = NULL)
-
-
 
 ## ESTIMATE AGE-SPECIFIC RATES FROM SIMULATED DATA (5-year intervals)
 # Estimate age-specific fertility rates
@@ -168,7 +166,7 @@ SocsimF <- asfr_sim %>%
   mutate(Source = "SOCSIM",
          Rate = "ASFR")
 
-yrs_plot <- c("[1850,1855)", "[1880,1885)", "[1910,1915)", "[1940,1945)", "[1970,1975)", "[2000,2005)", "[2020,2025)") 
+yrs_plot <- c("[1850,1855)", "[1880,1885)", "[1910,1915)", "[1940,1945)", "[1960,1965)", "[2000,2005)", "[2020,2025)") 
 
 
 # MORTALITY
@@ -221,7 +219,7 @@ SocsimM <- asmr_sim %>%
   select(year, Sex, age,  mx, Source, Rate)
 
 # yrs_plot <- c("[1850,1851)", "[1880,1881)", "[1910,1911)", "[1940,1941)", "[1970,1971)", "[2000,2001)", "[2020,2021)") 
-yrs_plot <- c("[1850,1855)", "[1880,1885)", "[1910,1915)", "[1940,1945)", "[1970,1975)", "[2050,2055)", "[2020,2025)", "[2095,2100)") 
+yrs_plot <- c("[1850,1855)", "[1880,1885)", "[1910,1915)", "[1940,1945)", "[1960,1965)", "[2050,2055)", "[2020,2025)", "[2095,2100)") 
 
 
 
@@ -229,7 +227,7 @@ yrs_plot <- c("[1850,1855)", "[1880,1885)", "[1910,1915)", "[1940,1945)", "[1970
 ## PLOT SIMULATED AND INPUT DATA TOGETHER
 
 # create folder to store graphs
-graph.folder <- paste0(folder,"/sim_results_", supfile, "_",seed,"_/graphs/") # Check if the folder already exists
+graph.folder <- paste0(folder, "/sim_results_", seed, "_/graphs/") # Check if the folder already exists
 if (!dir.exists(graph.folder)) {
   # If not, create the new folder
   dir.create(graph.folder)
@@ -239,7 +237,7 @@ if (!dir.exists(graph.folder)) {
 }
 
 ## Plotting ASFR and ASMR (for females) from HFC/HMD/UNWPP vs SOCSIM 
-yrs_plot <- c("[1850,1855)", "[1880,1885)", "[1910,1915)", "[1940,1945)", "[1970,1975)", "[2050,2055)", "[2020,2025)", "[2095,2100)") 
+yrs_plot <- c("[1850,1855)", "[1880,1885)", "[1910,1915)", "[1940,1945)", "[1960,1965)", "[2050,2055)", "[2020,2025)", "[2095,2100)") 
 
 # Get the age levels to define them before plotting and avoid wrong order
 age_levels <- levels(asmr_sim$age)
@@ -325,8 +323,16 @@ opop <- opop %>%
          dod_year = asYr(dod, last_month=last_month, final_sim_year=final_sim_year))
 
 # Saving opop data frame for usage in R on my Mac
-save(opop, file = paste0(folder,"/sim_results_", supfile, "_",seed,"_/opop.RData"))
-}
+save(opop, file = paste0(folder, "/sim_results_", seed, "_/opop.RData"))
+#}
+
+
+
+
+
+
+
+
 
 
 ## PREPARATION SEQUENCE ANALYSIS ##
@@ -338,7 +344,7 @@ for (i in c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) {
   seed <- paste0(base_seed,i)
   
 # load simulated register data
-load(paste0(folder, "/sim_results_", supfile, "_", seed, "_/opop.RData"))
+load(paste0(folder, "/sim_results_", seed, "_/opop.RData"))
 
 library(data.table)
 library(dtplyr)
@@ -635,15 +641,15 @@ gp <- left_join(gp, oldestc)
 gp <- left_join(gp, oldestgc)
 gp <- left_join(gp, sample)
 
-# generate indicators for share of (grand)parents
+# generate indicators for share of (grand)parents and individuals dying before censoring
 gp <- gp %>% 
   mutate(numkids = ifelse(is.na(numkids), 0, numkids),
          isparent = ifelse(numkids > 0, 1, 0),
          numgkids = ifelse(is.na(numgkids), 0, numgkids),
-         isgparent = ifelse(numgkids > 0, 1, 0))
+         isgparent = ifelse(numgkids > 0, 1, 0),
+         dead = ifelse(dod_year > cohort+max_age, 0, 1))
 
-save(gp, file = paste0(folder,"/sim_results_", supfile, "_",seed,"_/gp",cohort,max_age,".RData"))
-
+save(gp, file = paste0(folder, "/sim_results_", seed,"_/gp",cohort,max_age,".RData"))
 # end max_age loop
 }
 
