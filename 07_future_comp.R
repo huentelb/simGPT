@@ -19,7 +19,7 @@ ages <- as.character(c(0:max_age))
 lab_ages <- paste0("age", ages)
 
 # Folder based on simulation base_seed
-folder.baseseed <- paste0(folder,"/sim_results_", supfile, "_",base_seed,"_/")
+folder.baseseed <- paste0(folder,"/sim_results_",base_seed,"_/")
 if (!dir.exists(folder.baseseed)) {
   # If not, create the new folder
   dir.create(folder.baseseed)
@@ -496,9 +496,16 @@ agg_round <- agg %>%
   ungroup() %>% 
   mutate(across(-c(chi, cohort), ~round(.x, 2)))
 
+# Labels from 06_future_gpt00.R -> adjust if changes
+l1 <- as.character(paste0("Cluster 1 -\n 3-gen family"))
+l2 <- as.character(paste0("Cluster 2 -\n 4-gen family"))
+l3 <- as.character(paste0("Cluster 3 -\n 3-gen (via 2-gen) family"))
+l4 <- as.character(paste0("Cluster 4 -\n 2-gen family/fuzzy"))
+l5 <- as.character(paste0("Cluster 5 -\n Non-parent"))
+
 # Swap rows and columns
 # sorted in descending order (size) within cohorts
-tab3_agg <- agg_round %>% 
+tab2_agg <- agg_round %>% 
   arrange(cohort, chi) %>% 
   pivot_longer(cols = -c(chi, cohort), names_to = "variable", values_to = "value") %>% 
   unite("group", chi, cohort, sep = "_") %>% # combine chi and cohort into a single column
@@ -514,7 +521,7 @@ tab3_agg <- agg_round %>%
 
 
 # Number of observations
-tab3_n <- gp60 %>%
+tab2_n <- gp60 %>%
   rbind(gp00) %>% 
   mutate(cohort = dob_year) %>% 
   count(cohort, chi) %>% 
@@ -534,10 +541,10 @@ tab3_n <- gp60 %>%
   ) %>% 
   as.data.frame()
 
-tab3 <- tab3_agg %>% 
-  rbind(tab3_n)
+tab2 <- tab2_agg %>% 
+  rbind(tab2_n)
 
-tab3 <- rownames_to_column(tab3, var = "Variable")
+tab2 <- rownames_to_column(tab2, var = "Variable")
 
 
 set_flextable_defaults(
@@ -546,13 +553,13 @@ set_flextable_defaults(
   line_spacing = 1.3,
 )
 
-ft3 <- flextable(tab3) %>% 
+ft2 <- flextable(tab2) %>% 
   add_header_row(colwidths = c(1,2,2,2,2,3), values = c(" ", l1, l2, l3, l4, l5)) %>% 
   align(align = "center", part = "header") %>% 
   align(j = 1, align = "left", part = "body") # first column left-align
-ft3
+ft2
 
-save_as_docx("Table 3" = ft3, path = paste0(folder.baseseed, "Tab3.docx"), align = "left")
+save_as_docx("Table 2" = ft2, path = paste0(folder.baseseed, "tab2.docx"), align = "left")
 
 
 # Mean time in each state per cluster
