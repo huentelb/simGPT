@@ -2,7 +2,7 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # BENCHMARK MICROSIMULATED AGAINST EMPIRICAL REGISTER DATA
-# 1960 BIRTH COHORT - AGE RANGE 0-67 
+# 1960 BIRTH COHORT - AGE RANGE 0-59
 
 # ONLY RUNS ON SERVER WITH NORWEGIAN REGISTER DATA
 
@@ -44,7 +44,7 @@ if (!dir.exists(folder.baseseed)) {
 }
 
 # 2. Lower level folder for cohort-max age-specific output 
-graph.folder <- paste0(folder.baseseed, "benchmark_boot/")
+graph.folder <- paste0(folder.baseseed, "benchmark_joint/")
 if (!dir.exists(graph.folder)) {
   # If not, create the new folder
   dir.create(graph.folder)
@@ -68,7 +68,8 @@ gpm <- gp %>%
   select(pid, gp_0:gp_59, dage:gcage, numkids, numgkids, dead_p, isparent, isgparent) %>% 
   rename_with(~ gsub("^gp_(\\d+)$", "gp\\1", .), starts_with("gp")) %>% # remove _ 
   mutate(source = "Microsimulation",
-         pid = paste0("P", pid)) # add suffix P to pid 
+         pid = paste0("P", pid), # add suffix P to pid 
+         dead = ifelse(is.na(dage), 0, 1)) # add share of individuals who died before end of observation period
 
 
 ##### LOAD EMPIRICAL REGISTER DATA #####
@@ -82,9 +83,8 @@ gpe <- gp %>%
   filter(dage > 0 | is.na(dage)) %>% # exclude individuals who did not survive until first birthday
   select(pid, gp0:gp59, dage, pdage, cage, gcage, numkids, numgkids, dead_p,
          isparent, isgparent) %>% 
-  mutate(source = "Register")
-
-
+  mutate(source = "Register",
+         dead = ifelse(is.na(dage), 0, 1)) # add share of individuals who died before end of observation period
 
 
 ### AGGREGATE-LEVEL COMPARISONS ####
@@ -92,7 +92,7 @@ gpe <- gp %>%
 # Means
 agg_mean <- gpe %>% 
   rbind(gpm) %>% 
-  select(source, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
+  select(source, dead, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
   group_by(source) %>% 
   summarise_all(mean, na.rm = TRUE)
 
@@ -119,7 +119,7 @@ agg <- agg_mean %>%
   left_join(agg_sd, by = "source") %>% 
   left_join(agg_p50, by = "source") %>% 
   select(
-    source,
+    source,dead,
     starts_with("dage"),
     starts_with("dead_p"),
     starts_with("pdage"),
@@ -142,7 +142,7 @@ tab1_agg <- agg %>%
 # Add significance test for difference
 gp_boot <- gpe %>% 
   rbind(gpm) %>% 
-  dplyr::select(source, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage)
+  dplyr::select(source, dead, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage)
 
 # bootstrapped means
 library(tidyverse)
@@ -190,7 +190,7 @@ boot_ci_diff <- function(df, var) {
 }
 
 # apply function to following vars
-vars <- c("dage", "dead_p", "pdage", "isparent", "numkids", "cage", "isgparent", "numgkids", "gcage")
+vars <- c("dead", "dage", "dead_p", "pdage", "isparent", "numkids", "cage", "isgparent", "numgkids", "gcage")
 
 diffs_boot <- map_dfr( # rowbind output of function
   vars,
@@ -223,6 +223,63 @@ tab1_n <- gpe %>%
   as.data.frame
 
 rownames(tab1_n) <- "N"
+
+
+
+# Comparison of mortality at different ages
+mort1 <- gpe %>% 
+  rbind(gpm) %>% 
+  dplyr::select(source,dage) %>% 
+  group_by(source) %>% 
+  filter(dage > 1) %>% 
+  summarise_all(mean, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "1"), .cols = -source) # rename mean
+
+mort5 <- gpe %>% 
+  rbind(gpm) %>% 
+  dplyr::select(source,dage) %>% 
+  group_by(source) %>% 
+  filter(dage > 5) %>% 
+  summarise_all(mean, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "5"), .cols = -source) # rename mean
+
+mort10 <- gpe %>% 
+  rbind(gpm) %>% 
+  dplyr::select(source,dage) %>% 
+  group_by(source) %>% 
+  filter(dage > 10) %>% 
+  summarise_all(mean, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "10"), .cols = -source) # rename mean
+
+mort20 <- gpe %>% 
+  rbind(gpm) %>% 
+  dplyr::select(source,dage) %>% 
+  group_by(source) %>% 
+  filter(dage > 20) %>% 
+  summarise_all(mean, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "20"), .cols = -source) # rename mean
+
+mort40 <- gpe %>% 
+  rbind(gpm) %>% 
+  dplyr::select(source,dage) %>% 
+  group_by(source) %>% 
+  filter(dage > 40) %>% 
+  summarise_all(mean, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "40"), .cols = -source) # rename mean
+
+mort <- mort1 %>% 
+  left_join(mort5, by = "source") %>% 
+  left_join(mort10, by = "source") %>% 
+  left_join(mort20, by = "source") %>% 
+  left_join(mort40, by = "source") 
+
+# Swap rows and columns 
+tab_mort <- mort %>%
+  mutate(across(-source, ~ round(.x, 2))) %>%
+  pivot_longer(-source, names_to = "variable", values_to = "value") %>%
+  pivot_wider(names_from = source, values_from = value) 
+
+write.csv(tab_mort, paste0(graph.folder, "tab_mort.csv"))
 
 
 
@@ -555,8 +612,8 @@ chi_ward <- hclust(as.dist(chi), method = "ward.D")
 #omt_ward <- hclust(as.dist(omt), method = "ward.D")
 #omc_ward <- hclust(as.dist(omc), method = "ward.D")
 
-# chi_ward10 <- as.clustrange(chi_ward, diss = chi, ncluster = 10, weigths = ac$aggWeights)
-# saveRDS(chi_ward10, file = paste0(graph.folder, "chiward10.RData"))
+chi_ward10 <- as.clustrange(chi_ward, diss = chi, ncluster = 10, weigths = ac$aggWeights)
+saveRDS(chi_ward10, file = paste0(graph.folder, "chiward10.RData"))
 
 chi_ward10 <- readRDS(paste0(graph.folder, "chiward10.RData"))
 
@@ -1254,7 +1311,80 @@ par(original_par) # reset layout
 # Representation using CHI2 distances perform better
 
 
-### Regression by cohort ####
+
+
+#### DESCRIPTION OF CLUSTERS ####
+
+# Means
+agg_mean <- gp %>% 
+  select(chi, dead, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
+  group_by(chi) %>% 
+  summarise_all(mean, na.rm = TRUE)
+
+# Medians (for cont vars)
+agg_p50 <- gp %>% 
+  select(chi, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  group_by(chi) %>% 
+  summarise_all(median, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "_p50"), .cols = -c(chi))
+
+# SD (for cont vars)
+agg_sd <- gp %>% 
+  select(chi, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  group_by(chi) %>% 
+  summarise_all(sd, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "_sd"), .cols = -c(chi)) 
+
+
+# Combine means, medians and SD into one df
+agg <- agg_mean %>% 
+  left_join(agg_sd, by = c("chi")) %>% 
+  left_join(agg_p50, by = c("chi")) %>% 
+  select(
+    chi, dead,
+    starts_with("dage"),
+    starts_with("dead_p"),
+    starts_with("pdage"),
+    starts_with("isparent"),
+    starts_with("numkids"),
+    starts_with("cage"),
+    starts_with("isgparent"),
+    starts_with("numgkids"),
+    starts_with("gcage")
+  )
+
+
+
+tab_a1_agg <- agg %>%
+  mutate(across(-chi, ~ round(.x, 2))) %>%
+  pivot_longer(-chi, names_to = "variable", values_to = "value") %>%
+  pivot_wider(names_from = chi, values_from = value) 
+
+
+# Number of observations
+tab_a1_n <- gp %>%
+  group_by(chi) %>% 
+  count() %>% 
+  pivot_wider(names_from = chi, values_from = n) %>% 
+  as.data.frame
+
+rownames(tab_a1_n) <- "N"
+tab_a1_n <- rownames_to_column(tab_a1_n, var = "variable")
+
+
+
+##### CREATE TAB A1 ####
+tab_a1 <- tab_a1_agg %>% 
+  rbind(tab_a1_n) 
+
+write.csv(tab_a1, paste0(graph.folder, "tab_a1.csv"))
+
+
+
+
+
+### REGRESSION BY SOURCE ####
+
 # Package for multinomial logistic regression
 library(nnet)
 # To transpose output results
@@ -1284,7 +1414,7 @@ gp_bench <- gp_reg  %>%
   mutate(across(everything(), as.numeric))
 write.dta(gp_bench, paste0(folder,"gp_bench.dta"))
 
-fit_basic <- multinom(chi ~ source, data = gp_reg, label = FALSE)
+fit_basic <- multinom(chi ~ source, data = gp_reg)
 tidy(fit_basic, conf.int=TRUE)
 tbl_regression(fit_basic, exp = TRUE)
 
@@ -1294,8 +1424,7 @@ ggaverage(fit_basic, terms = "source", ci_level = 0.95) %>%
 ggeffect(fit_basic, terms = "source", ci_level = 0.95) %>%
   plot() 
 
-contrast <- avg_comparisons(fit_basic,
-                            variables = "source")
+contrast <- avg_comparisons(fit_basic)
 
 pdf(paste0(graph.folder, "contrast.pdf"), 
     width = 8, height = 9)
@@ -1328,7 +1457,7 @@ ggplot(data = pprob_cohort,
                 width = .05) +
   scale_color_brewer(palette = "Dark2",
                      name = "",
-                     labels = c(l1, l2, l3, l4, l5, l6, l7, l8)) +
+                     labels = c(l1, l2, l3, l4, l5, l6)) +
   labs(
     x = "Cohort",
     y = "Probability"
