@@ -1,8 +1,8 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# SEQUENCE & CLUSTER ANALYSIS 
-# 1953 BIRTH COHORT - AGE RANGE 0-100
+# SEQUENCE & CLUSTER ANALYSIS on JOINT SAMPLE
+# 1960 and 2000 BIRTH COHORTS - AGE RANGE 0-100
 
 # Code written by Bettina Hünteler
 # huenteler@demogr.mpg.de
@@ -43,7 +43,7 @@ if (!dir.exists(graph.folder)) {
 
 
 
-#### OPEN MERGED SIMULATION FILE FOR 1960 COHORT ####
+#### OPEN MERGED SIMULATION FILES ####
 
 # Laod gp data of both cohorts and store as separate dataframes with according suffix
 load(paste0(folder.baseseed, "gp1960100.RData"))
@@ -309,43 +309,40 @@ dev.off()
 
 # We extract X clusters and re-label them from 1 to X to replace the medoid identifiers
 
-# identify medoids sorted by frequency
-mc <- chi_pam10$clustering$cluster8[ac$disaggIndex]
+# identify medoids sorted according to separate cluster solution of 1960 cohort
+mc <- chi_pam10$clustering$cluster7[ac$disaggIndex]
 med <- as.data.frame(sort(table(mc), decreasing = TRUE))
-med1 <- as.character(med[1,1])
-med2 <- as.character(med[2,1])
-med3 <- as.character(med[3,1])
-med4 <- as.character(med[4,1])
-med5 <- as.character(med[5,1])
-med6 <- as.character(med[6,1])
-med7 <- as.character(med[7,1])
-med8 <- as.character(med[8,1])
+med1 <- as.character(med[1,1]) # 3-gen 
+med2 <- as.character(med[3,1]) # 4-gen
+med3 <- as.character(med[2,1]) # 3-gen via 2-gen
+med4 <- as.character(med[5,1]) # 2-gen fuzzy
+med5 <- as.character(med[4,1]) # Non-parent
+med6 <- as.character(med[7,1]) # Non-parent + early death
+med7 <- as.character(med[6,1]) # new cluster
 
 # store size of clusters for each cluster to add to titles
 propmed <- as.data.frame(sort(prop.table(table(mc)), decreasing = TRUE))
-propmed1 <- round(propmed[1,2], digits = 2)*100
-propmed2 <- round(propmed[2,2], digits = 2)*100
-propmed3 <- round(propmed[3,2], digits = 2)*100
-propmed4 <- round(propmed[4,2], digits = 2)*100
-propmed5 <- round(propmed[5,2], digits = 2)*100
-propmed6 <- round(propmed[6,2], digits = 2)*100
-propmed7 <- round(propmed[7,2], digits = 2)*100
-propmed8 <- round(propmed[8,2], digits = 2)*100
+propmed1 <- round(propmed[1,2], digits = 2)*100 # adjust order of clusters also here!
+propmed2 <- round(propmed[3,2], digits = 2)*100
+propmed3 <- round(propmed[2,2], digits = 2)*100
+propmed4 <- round(propmed[5,2], digits = 2)*100
+propmed5 <- round(propmed[4,2], digits = 2)*100
+propmed6 <- round(propmed[7,2], digits = 2)*100
+propmed7 <- round(propmed[6,2], digits = 2)*100
 
 # create factor containing medoids incl labels
-mc.factor <- factor(mc, levels = c(med1, med2, med3, med4, med5, med6, med7, med8),
-                    as.character(c("1","2","3","4","5","6","7","8")))
+mc.factor <- factor(mc, levels = c(med1, med2, med3, med4, med5, med6, med7),
+                    as.character(c("1","2","3","4","5","6","7")))
 
 
 # store labels as values for later use
 l1 <- as.character(paste0("Cluster 1 -\n 3-gen family (", propmed1, "%)"))
-l2 <- as.character(paste0("Cluster 2 -\n 3-gen (via 4-gen) family (", propmed2, "%)"))
-l3 <- as.character(paste0("Cluster 3 -\n Non-parent (", propmed3, "%)"))
-l4 <- as.character(paste0("Cluster 4 -\n 3-gen (via 2-gen) family (", propmed4, "%)"))
-l5 <- as.character(paste0("Cluster 5 -\n 4-gen family (", propmed5, "%)"))
-l6 <- as.character(paste0("Cluster 6 -\n 3-gen family + early death (", propmed6, "%)"))
-l7 <- as.character(paste0("Cluster 7 -\n 2-gen family (", propmed7, "%)"))
-l8 <- as.character(paste0("Cluster 8 -\n Non-parent + early death (", propmed8, "%)"))
+l2 <- as.character(paste0("Cluster 2 -\n 4-gen family (", propmed2, "%)"))
+l3 <- as.character(paste0("Cluster 3 -\n 3-gen (via 2-gen) family (", propmed3, "%)"))
+l4 <- as.character(paste0("Cluster 4 -\n 2-gen family/fuzzy (", propmed4, "%)"))
+l5 <- as.character(paste0("Cluster 5 -\n Non-parent (", propmed5, "%)"))
+l6 <- as.character(paste0("Cluster 6 -\n Non-parent + early death (", propmed6, "%)"))
+l7 <- as.character(paste0("Cluster 7 -\n 3-gen family + early death (", propmed7, "%)"))
 
 # attach to dataframe to use as weights in plots
 gp$chi <- factor(mc.factor,
@@ -355,8 +352,7 @@ gp$chi <- factor(mc.factor,
                             l4,
                             l5,
                             l6,
-                            l7,
-                            l8))
+                            l7))
 
 
 # save new dataframe for later comparison
@@ -375,21 +371,24 @@ seq <- seqdef(gp, 6:paste0(max_age+6), # for max_age 100 to column 106, for max_
               states = gpstates,
               missing = "D", right = "DEL")
 
+w = 2000
+h = 1250
+
 # different plots with labels
-png(file = paste0(graph.folder, "seqD_8_lab.png"),
+png(file = paste0(graph.folder, "seqD_7_lab.png"),
     width=w, height=h)
 seqdplot(seq, group = gp$chi, border = NA,
          ltext = gpstates, with.legend = FALSE, cex.axis = 2)
 dev.off()
 
-png(file = paste0(graph.folder, "seqI_8_lab.png"),
+png(file = paste0(graph.folder, "seqI_7_lab.png"),
     width=w, height=h)
 seqIplot(seq, group = gp$chi, border = NA,
          ltext = gpstates, with.legend = FALSE, cex.axis = 2,
          missing.color = "#f7f7f7")
 dev.off()
 
-png(file = paste0(graph.folder, "seqF100_8_lab.png"),
+png(file = paste0(graph.folder, "seqF100_7_lab.png"),
     width=w, height=h)
 seqfplot(seq, group = gp$chi, border = NA,
          ltext = gpstates, with.legend = FALSE, cex.axis = 2,
@@ -397,7 +396,7 @@ seqfplot(seq, group = gp$chi, border = NA,
 dev.off()
 
 by(seq, gp$chi, seqmeant)
-png(file = paste0(graph.folder, "mean_plot_8_lab.png"),
+png(file = paste0(graph.folder, "mean_plot_7_lab.png"),
     width=w, height=h)
 seqmtplot(seq, group = gp$chi, border = NA,
           ltext = c(gpstates), 
@@ -495,8 +494,6 @@ c6 <- gp %>%
 c7 <- gp %>% 
   filter(chi == l7)
 
-c8 <- gp %>% 
-  filter(chi == l8)
 
 # Cluster 1
 seq1 <- seqdef(c1, 6:paste0(max_age+6), # for max_age 100 to column 106, for max_age 66 to column 72
@@ -679,30 +676,6 @@ dev.off()
 
 
 
-# Cluster 8
-seq8 <- seqdef(c8, 6:paste0(max_age+6), # for max_age 100 to column 101, for max_age 66 to column 72
-               labels = gplabels,  
-               cnames = ages, 
-               tick.last = TRUE, 
-               xtstep = 5, 
-               cpal = cblind, 
-               alphabet = gpalpha, 
-               states = gpstates,
-               missing = "D", right = "DEL")
-
-# CHI2 distance
-chi8 <- seqdist(seq8, method = "CHI2", step = max(seqlength(seq8)))
-
-# Select medoids based on distance
-srfchi8 <- seqrf(seq8,
-                 diss = chi8,
-                 sortv = "mds",
-                 grp.meth = "first")
-
-pdf(file = paste0(graph.folder, "seqrf_c8.pdf"),
-    width=w, height=h)
-plot(srfchi8, which.plot = "both", main = l8)
-dev.off()
 
 
 
@@ -712,7 +685,7 @@ h <- 600
 
 # png(file = paste0(graph.folder, "seqrf_cluster6.png"),
 #     width=w, height=h)
-pdf(paste0(graph.folder, "seqrf_cluster8.pdf"), 
+pdf(paste0(graph.folder, "seqrf_cluster7.pdf"), 
     width = 8, height = 6)
 
 original_par <- par(no.readonly = TRUE) # store original current parameter
@@ -725,14 +698,13 @@ plot(srfchi2, which.plot = "medoids", skipar = TRUE, main = l2, cex.main = 1, in
 plot(srfchi3, which.plot = "medoids", skipar = TRUE, main = l3, cex.main = 1, info = "none")
 plot(srfchi4, which.plot = "medoids", skipar = TRUE, main = l4, cex.main = 1, info = "none")
 plot(srfchi5, which.plot = "medoids", skipar = TRUE, main = l5, cex.main = 1, info = "none")
-plot(srfchi6, which.plot = "medoids", skipar = TRUE, main = l6, cex.main = 1, info = "none")
+plot(srfchi6, which.plot = "medoids", skipar = TRUE, main = l6, cex.main = 1, info = "none", xlab = "Age")
 plot(srfchi7, which.plot = "medoids", skipar = TRUE, main = l5, cex.main = 1, info = "none", xlab = "Age")
-plot(srfchi8, which.plot = "medoids", skipar = TRUE, main = l6, cex.main = 1, info = "none", xlab = "Age")
 dev.off()
 par(original_par) # reset layout
 
 
-pdf(paste0(graph.folder, "seqrf_both_cluster8.pdf"), 
+pdf(paste0(graph.folder, "seqrf_both_cluster7.pdf"), 
     width = 8, height = 9)
 par(mfrow = c(4, 4), # 3 rows, 4 columns
     mar = c(3.5, 2, 3 , 2), # margins of each plot
@@ -752,211 +724,17 @@ plot(srfchi4, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
 plot(srfchi5, which.plot = "medoids", skipar = TRUE, main = l5, cex.main = 1.1, info = "none")
 plot(srfchi5, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
 
-plot(srfchi6, which.plot = "medoids", skipar = TRUE, main = l6, cex.main = 1.1, info = "none")
+plot(srfchi6, which.plot = "medoids", skipar = TRUE, main = l6, cex.main = 1.1, info = "none", xlab = "Age")
 plot(srfchi6, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
 
 plot(srfchi7, which.plot = "medoids", skipar = TRUE, main = l7, cex.main = 1.1, info = "none", xlab = "Age")
 plot(srfchi7, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
 
-plot(srfchi8, which.plot = "medoids", skipar = TRUE, main = l8, cex.main = 1.1, info = "none", xlab = "Age")
-plot(srfchi8, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
 dev.off()
 par(original_par) # reset layout
 
 
 
-
-#### RFplot with OM ####
-w <- 7
-h <- 7
-
-# 2) OM distance with transition rate based costs (to see if OMdistance based RF better represent all sequences)
-omt <- seqdist(testseq, method = "OM", indel = 1, sm = "TRATE")
-
-# Select medoids based on distance
-srfomt <- seqrf(testseq,
-               diss = omt,
-               sortv = "mds",
-               grp.meth = "first")
-
-# RF plot: 
-# Plot all k = 100 medoids + average distance of repr. sequences to medoid
-plot(srfomt, which.plot = "both")
-
-
-# For sequence index plot in order of RF plot: 
-# a. Assign representing medoid to each sequence (medoid_id)
-testgp <- testgp %>% 
-  mutate(medoid_id = srfomt[["rf"]][["kmedoid.index"]])
-
-# b. Sort medoid_id according to order of rfplot
-testgp <- testgp %>% 
-  mutate(medoid_id = factor(medoid_id, levels = srfomt[["rf"]][["medoids"]]))
-
-# c. seqIplot sorted by medoid_id
-seqIplot(testseq, border = NA,
-         ltext = c(gpstates), 
-         missing.color = "#f7f7f7", with.legend = FALSE,
-         sortv = testgp$medoid_id)
-
-
-# Cluster 1
-# OM distance
-omt1 <- seqdist(seq1, method = "OM", indel = 1, sm = "TRATE")
-
-# Select medoids based on distance
-srfomt1 <- seqrf(seq1,
-                 diss = omt1,
-                 sortv = "mds",
-                 grp.meth = "first")
-
-pdf(file = paste0(graph.folder, "seqrf_om_c1.pdf"),
-    width=w, height=h)
-plot(srfomt1, which.plot = "both", main = l1)
-dev.off()
-
-# Cluster 2
-# OM distance
-omt2 <- seqdist(seq2, method = "OM", indel = 1, sm = "TRATE")
-
-# Select medoids based on distance
-srfomt2 <- seqrf(seq2,
-                 diss = omt2,
-                 sortv = "mds",
-                 grp.meth = "first")
-
-pdf(file = paste0(graph.folder, "seqrf_om_c2.pdf"),
-    width=w, height=h)
-plot(srfomt2, which.plot = "both", main = l2)
-dev.off()
-
-
-# Cluster 3
-# OM distance
-omt3 <- seqdist(seq3, method = "OM", indel = 1, sm = "TRATE")
-
-# Select medoids based on distance
-srfomt3 <- seqrf(seq3,
-                 diss = omt3,
-                 sortv = "mds",
-                 grp.meth = "first")
-
-pdf(file = paste0(graph.folder, "seqrf_om_c3.pdf"),
-    width=w, height=h)
-plot(srfomt3, which.plot = "both", main = l3)
-dev.off()
-
-
-# Cluster 4
-# OM distance
-omt4 <- seqdist(seq4, method = "OM", indel = 1, sm = "TRATE")
-
-# Select medoids based on distance
-srfomt4 <- seqrf(seq4,
-                 diss = omt4,
-                 sortv = "mds",
-                 grp.meth = "first")
-
-pdf(file = paste0(graph.folder, "seqrf_om_c4.pdf"),
-    width=w, height=h)
-plot(srfomt4, which.plot = "both", main = l4)
-dev.off()
-
-# Cluster 5
-# OM distance
-omt5 <- seqdist(seq5, method = "OM", indel = 1, sm = "TRATE")
-
-# Select medoids based on distance
-srfomt5 <- seqrf(seq5,
-                 diss = omt5,
-                 sortv = "mds",
-                 grp.meth = "first")
-
-pdf(file = paste0(graph.folder, "seqrf_om_c5.pdf"),
-    width=w, height=h)
-plot(srfomt5, which.plot = "both", main = l5)
-dev.off()
-
-
-# Cluster 6
-# OM distance
-omt6 <- seqdist(seq6, method = "OM", indel = 1, sm = "TRATE")
-
-# Select medoids based on distance
-srfomt6 <- seqrf(seq6,
-                 diss = omt6,
-                 sortv = "mds",
-                 grp.meth = "first")
-
-pdf(file = paste0(graph.folder, "seqrf_om_c6.pdf"),
-    width=w, height=h)
-plot(srfomt6, which.plot = "both", main = l6)
-dev.off()
-
-# Cluster 7
-# OM distance
-omt7 <- seqdist(seq7, method = "OM", indel = 1, sm = "TRATE")
-
-# Select medoids based on distance
-srfomt7 <- seqrf(seq7,
-                 diss = omt7,
-                 sortv = "mds",
-                 grp.meth = "first")
-
-pdf(file = paste0(graph.folder, "seqrf_om_c7.pdf"),
-    width=w, height=h)
-plot(srfomt7, which.plot = "both", main = l7)
-dev.off()
-
-# Cluster 8
-# OM distance
-omt8 <- seqdist(seq8, method = "OM", indel = 1, sm = "TRATE")
-
-# Select medoids based on distance
-srfomt8 <- seqrf(seq8,
-                 diss = omt8,
-                 sortv = "mds",
-                 grp.meth = "first")
-
-pdf(file = paste0(graph.folder, "seqrf_om_c8.pdf"),
-    width=w, height=h)
-plot(srfomt8, which.plot = "both", main = l8)
-dev.off()
-
-
-pdf(paste0(graph.folder, "seqrf_om_cluster8.pdf"), 
-    width = 8, height = 9)
-par(mfrow = c(4, 4), # 3 rows, 4 columns
-    mar = c(3.5, 2, 3 , 2), # margins of each plot
-    mgp = c(2, 1, 0)) # margins around axis title, axis labels, and axis line
-plot(srfomt1, which.plot = "medoids", skipar = TRUE, main = l1, cex.main = 1.1, info = "none")
-plot(srfomt1, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
-
-plot(srfomt2, which.plot = "medoids", skipar = TRUE, main = l2, cex.main = 1.1, info = "none")
-plot(srfomt2, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
-
-plot(srfomt3, which.plot = "medoids", skipar = TRUE, main = l3, cex.main = 1.1, info = "none")
-plot(srfomt3, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
-
-plot(srfomt4, which.plot = "medoids", skipar = TRUE, main = l4, cex.main = 1.1, info = "none")
-plot(srfomt4, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
-
-plot(srfomt5, which.plot = "medoids", skipar = TRUE, main = l5, cex.main = 1.1, info = "none")
-plot(srfomt5, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
-
-plot(srfomt6, which.plot = "medoids", skipar = TRUE, main = l6, cex.main = 1.1, info = "none")
-plot(srfomt6, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
-
-plot(srfomt7, which.plot = "medoids", skipar = TRUE, main = l7, cex.main = 1.1, info = "none", xlab = "Age")
-plot(srfomt7, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
-
-plot(srfomt8, which.plot = "medoids", skipar = TRUE, main = l8, cex.main = 1.1, info = "none", xlab = "Age")
-plot(srfomt8, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
-dev.off()
-par(original_par) # reset layout
-
-
-# Representation using CHI2 distances perform better
 
 
 ### Regression by cohort ####
@@ -976,13 +754,12 @@ gp_reg <- gp %>%
                                   "2000")),
     chi = factor(chi,
                  labels = c("C1 - 3-gen",
-                            "C2 - 3- via 4-gen",
-                            "C3 - Non-parent",
-                            "C4 - 3- via 2-gen",
-                            "C5 - 4-gen",
-                            "C6 - 3-gen, early death",
-                            "C7 - 2-gen",
-                            "C8 - Non-parent, early death")),
+                            "C2 - 4-gen",
+                            "C3 - 3- via 2-gen",
+                            "C4 - 2-gen/fuzzy",
+                            "C5 - Non-parent",
+                            "C6 - Non-parent, early death",
+                            "C7 - 3-gen, early death")),
   ) %>% 
   dplyr::select(chi, cohort)
 
@@ -1027,15 +804,15 @@ pprob_cohort <- ggeffect(fit_basic, terms = "cohort")
 ggplot(data = pprob_cohort,
        aes(x = x, y = predicted,
            color = response.level, group = response.level)) +
-  geom_line() +
-  # geom_point() +
+  # geom_line() +
+  geom_point() +
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high,
                     color = response.level,
                     group = response.level),
                 width = .05) +
   scale_color_brewer(palette = "Dark2",
                      name = "",
-                     labels = c(l1, l2, l3, l4, l5, l6, l7, l8)) +
+                     labels = c(l1, l2, l3, l4, l5, l6, l7)) +
   labs(
     x = "Cohort",
     y = "Probability"
@@ -1049,6 +826,117 @@ ggplot(data = pprob_cohort,
   facet_wrap("response.level",
              nrow = 4)
   
+
+# Rename the levels of response.level to "C1", "C2", etc.
+pprob_cohort$response.level <- factor(pprob_cohort$response.level,
+                                      levels = unique(pprob_cohort$response.level),
+                                      labels = paste0("Cluster ", 1:length(unique(pprob_cohort$response.level))))
+
+pdf(paste0(graph.folder, "predprob.pdf"), 
+    width = 8, height = 6)
+ggplot(data = pprob_cohort,
+       aes(x = x, y = predicted)) +
+  geom_bar(
+    stat = "identity",
+    fill = "grey",
+    color = "black",
+    position = position_dodge()
+  ) +
+  geom_errorbar(
+    aes(ymin = conf.low, ymax = conf.high),
+    width = .05,
+    color = "black",
+    position = position_dodge(.9)
+  ) +
+  geom_text(
+    aes(label = round(predicted, 2)),
+    position = position_dodge(.9),
+    vjust = 2.5,
+    size = 3
+  ) +
+  labs(
+    x = "Cohort",
+    y = "Probability"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.title = element_text(size = 14),
+    strip.text = element_text(size = 12)
+  ) +
+  facet_wrap(
+    ~ response.level,
+    nrow = 1
+  )
+dev.off()
+
+
+
+#### DESCRIPTION OF CLUSTERS ####
+
+# Means
+agg_mean <- gp %>% 
+  select(chi, dage, dead_p, pdage, isparent, numkids, cage, isgparent, numgkids, gcage) %>% 
+  group_by(chi) %>% 
+  summarise_all(mean, na.rm = TRUE)
+
+# Medians (for cont vars)
+agg_p50 <- gp %>% 
+  select(chi, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  group_by(chi) %>% 
+  summarise_all(median, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "_p50"), .cols = -c(chi))
+
+# SD (for cont vars)
+agg_sd <- gp %>% 
+  select(chi, dage, pdage, numkids, cage, numgkids, gcage) %>% 
+  group_by(chi) %>% 
+  summarise_all(sd, na.rm = TRUE) %>% 
+  rename_with(.fn = ~ paste0(.x, "_sd"), .cols = -c(chi)) 
+
+
+# Combine means, medians and SD into one df
+agg <- agg_mean %>% 
+  left_join(agg_sd, by = c("chi")) %>% 
+  left_join(agg_p50, by = c("chi")) %>% 
+  select(
+    chi, 
+    starts_with("dage"),
+    starts_with("dead_p"),
+    starts_with("pdage"),
+    starts_with("isparent"),
+    starts_with("numkids"),
+    starts_with("cage"),
+    starts_with("isgparent"),
+    starts_with("numgkids"),
+    starts_with("gcage")
+  )
+
+
+
+tab_a9_agg <- agg %>%
+  mutate(across(-chi, ~ round(.x, 2))) %>%
+  pivot_longer(-chi, names_to = "variable", values_to = "value") %>%
+  pivot_wider(names_from = chi, values_from = value) 
+
+
+# Number of observations
+tab_a9_n <- gp %>%
+  group_by(chi) %>% 
+  count() %>% 
+  pivot_wider(names_from = chi, values_from = n) %>% 
+  as.data.frame
+
+rownames(tab_a9_n) <- "N"
+tab_a9_n <- rownames_to_column(tab_a9_n, var = "variable")
+
+
+
+##### CREATE TAB a9 ####
+tab_a9 <- tab_a9_agg %>% 
+  rbind(tab_a9_n) 
+
+write.csv(tab_a9, paste0(graph.folder, "tab_a9.csv"))
 
 
 

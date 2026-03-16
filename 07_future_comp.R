@@ -263,13 +263,13 @@ indic00 <- seqindic(seq00, indic=c("lgth", "visited", "visitp", "transp", # leng
 
 # store mean across full sample
 indic_mean60 <- indic60 %>%
-  summarise(round(across(everything(), \(x) mean(x, na.rm = TRUE)),3)) %>% 
+  summarise(round(across(everything(), \(x) mean(x, na.rm = TRUE)),2)) %>% 
   mutate(cohort = 1960) %>% 
   dplyr::select(-Visited) %>%
   dplyr::select(cohort, Lgth:Cplx)
 
 indic_mean00 <- indic00 %>%
-  summarise(round(across(everything(), \(x) mean(x, na.rm = TRUE)),3)) %>% 
+  summarise(round(across(everything(), \(x) mean(x, na.rm = TRUE)),2)) %>% 
   mutate(cohort = 2000) %>% 
   dplyr::select(-Visited) %>% 
   dplyr::select(cohort, Lgth:Cplx)
