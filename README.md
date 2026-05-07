@@ -1,20 +1,19 @@
 # Projecting Generational Placement Trajectories: Empirical and Simulated Populations in Norway
 Authored by Bettina Hünteler & Diego Alburez-Gutierrez. Find the preprint on [SocArXiv](https://doi.org/10.31235/osf.io/serxq_v1). 
-For questions contact huenteler@demogr.mpg.de. 
+For questions contact huenteler@diw.de. 
 
 ## Objective
-We aim to answer three research questions:
-1. Can microsimulation be used to validly estimate generational placement trajectories (GPT)?
-2. Which typical patterns emerge when considering the full life course (ages 0–100) for the 1960 and 2000 birth cohorts (RQ2)?
-3. How do these patterns compare between the cohorts regarding the timing of transitions as well as occurrence and duration of states (RQ3)?
+We aim to answer two research questions:
+1. Which typical patterns emerge when considering the full life course (ages 0–100) for the 1960 and 2000 birth cohorts (RQ2)?
+2. How do these patterns compare between the cohorts regarding the timing of transitions as well as occurrence and duration of states (RQ3)?
 
-This is the main output we want to produce to answer these questions:
+This is the main output we want to produce to answer our questions, starting with testing the feasibility of using microsimulation to examine intergenerational family life courses:
 1. Synthetic population register of individuals living in Norway in which we can link parents to their children based on `rsocsim`.
 2. Generational placement patterns (see [Hünteler, 2022](https://www.sciencedirect.com/science/article/pii/S104026082100054X)) for two cohorts across two age ranges
-    - 1960 birth cohort, age range 0 – 59: for benchmarking against existing historical register data (RQ1),
-    - 1960 and 2000 birth cohorts, age range 0 – 100: for projecting generational placement trajectories into the future (RQ2) and comparing them (RQ3). 
+    - 1960 birth cohort, age range 0 – 59: for benchmarking against existing historical register data,
+    - 1960 and 2000 birth cohorts, age range 0 – 100: for projecting generational placement trajectories into the future (RQ1) and comparing them (RQ2). 
 
-You can find a graphical representation of the analytical strategy in the manuscript (Figure 1). 
+You can find a graphical representation of the analytical strategy in the appendix of the manuscript (Figure A1). 
 
 
 ## This is how we do it
@@ -58,7 +57,7 @@ Before you start with the microsimulation, please adjust the [setup](01_setup.R)
 3. Name of the [supfile](socsim_NOR.sup) (contains settings for microsimulation)
 4. Specifications you will use in the supfile (fertility heterogeneity, birth interval, alpha and beta) so that output will contain correct info. (*Important: changing things here will not change anything about the settings of the microsimulation; the information here is only for labelling correctly! If you want to adjust the microsimulation settings, go to the [supfile](socsim_NOR.sup))*
 5. Base seed (within the code, we will run *i* different simulations that will then automatically be starting with setting the *base_seed* + *i*. This will create one output folder for each *i* simulation)
-    * For the main analysis we used the base seed *250129* and ten simulation rounds (*i* = 1 to 10). 
+    * For the main analysis we used the base seed *260311* and ten simulation rounds (*i* = 1 to 10). 
 6. Folder name (usually your working directory)
 
 
@@ -113,23 +112,23 @@ These dataframes are stored in your simulation-subfolders based on *base seed* a
 6. Generate descriptive tables to describe the composition of clusters (more details below)
 
 
-#### 5.2 Benchmarking (RQ1)
-[03_prep_benchmark.R](03_prep_benchmark.R) and [04_benchmark.R](04_benchmark.R) contain the code to compare the GPT from the synthetic population based on `rsocsim` with the empirical Norwegian register data. Note that you need access to the register data and that the empirical data needs to be prepared on the Norwegian server (GPT are defined using the same logic, but in stata; code not shared here). The benchmarking is also conducted on the Norwegian server, after uploading the simulated data. The empirical data cannot be downloaded from the Norwegian server. 
+#### 5.2 Benchmarking
+[03_prep_benchmark.R](03_prep_benchmark.R), [04_benchmark.R](04_benchmark.R) and [4_ame.do](4_ame.do) contain the code to compare the GPT from the synthetic population based on `rsocsim` with the empirical Norwegian register data. Note that you need access to the register data and that the empirical data needs to be prepared on the Norwegian server (GPT are defined using the same logic, but in stata; code not shared here). The benchmarking is also conducted on the Norwegian server, after uploading the simulated data. The empirical data cannot be downloaded from the Norwegian server. 
 
 This is the main output these two code files produce:
 - Aggregate indicators of demographic events based on both data sources (Table 1)
 - Mean time spent in each GPT based on both data sources (Table 1)
 - Overall sequence indicators based on both data sources (Table 1)
 - BIC differences between sequences based on both data sources (Table 1)
-- Cluster characteristics based on both data sources (Table 2)
+- Cluster characteristics based on both data sources (Figure A3 and Table A1)
 
-#### 5.3 Future GPT (RQ2) 
+#### 5.3 Future GPT (RQ1) 
 [05_future_gpt60.R](05_future_gpt60.R) and [06_future_gpt00.R](06_future_gpt00.R) analyse the GPT for both birth cohorts (1960 and 2000) from ages 0 to 100, thereby 'projecting' GPT into the future and examining typical GPT for both cohorts. For these analyses, you only need the simulated data, thus no access to the Norwegian register data. 
 
 These two code files produce:
-- Graphical representation of typical GPT through relative frequency sequence plots (Figure 2 and Figure 3)
+- Graphical representation of typical GPT through relative frequency sequence plots (Figure 1 and Figure 2)
 
-#### 5.4 Future GPT (RQ3) 
+#### 5.4 Future GPT (RQ2) 
 The [07_future_compare.R](07_future_compare.R) compares the GPT for both cohorts, to investigate change of (typical) GPT over historical time. 
 
 This code file produces:
@@ -137,5 +136,12 @@ This code file produces:
 - Mean time spent in each GPT for both cohorts (Table 1)
 - Overall sequence indicators for both cohorts (Table 1)
 - BIC differences between sequences contrasting both cohorts (Table 1)
-- Cluster characteristics for both cohorts (Table 3)
+- Cluster characteristics for both cohorts (Table 2)
 
+#### 5.4 Alternative scenarios
+Code files with the suffixes _high or _low produce simulations including the high and low fertility scenarios. They also produce the same output as for the main secnario (medium fertility). [09_future_scenarios_compare.R](09_future_scenarios_compare.R) compares the GPT across the scenarios.
+
+This code file produces:
+- Graphical representation of GPT across cohorts (Figure 3)
+- Comparisons of aggregate and sequence indicators different fertility scenarios for
+the 2000 birth cohort (Table B1)
