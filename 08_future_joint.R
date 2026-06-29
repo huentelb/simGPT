@@ -22,7 +22,7 @@ ages <- as.character(c(0:max_age))
 # Generate folders to store results
 
 # 1. Upper level folder based on simulation base_seed
-folder.baseseed <- paste0(folder,"/sim_results_", base_seed,"_/")
+folder.baseseed <- paste0(folder,"/sim_results_socsim_NOR.sup_", base_seed,"/")
 if (!dir.exists(folder.baseseed)) {
   # If not, create the new folder
   dir.create(folder.baseseed)
@@ -158,13 +158,13 @@ chi_ward <- hclust(as.dist(chi), method = "ward.D")
 #omt_ward <- hclust(as.dist(omt), method = "ward.D")
 #omc_ward <- hclust(as.dist(omc), method = "ward.D")
 
-chi_ward10 <- as.clustrange(chi_ward, diss = chi, ncluster = 10, weigths = ac$aggWeights)
-saveRDS(chi_ward10, file = paste0(graph.folder, "chiward10.RData"))
-
-chi_ward10 <- readRDS(paste0(graph.folder, "chiward10.RData"))
-
-chiWard.qual <- chi_ward10
-plot(chiWard.qual, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2)
+# chi_ward10 <- as.clustrange(chi_ward, diss = chi, ncluster = 10, weigths = ac$aggWeights)
+# saveRDS(chi_ward10, file = paste0(graph.folder, "chiward10.RData"))
+# 
+# chi_ward10 <- readRDS(paste0(graph.folder, "chiward10.RData"))
+# 
+# chiWard.qual <- chi_ward10
+# plot(chiWard.qual, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2)
 
 # omt_ward10 <- as.clustrange(omt_ward, diss = chi, ncluster = 10)
 # omtWard.qual <- omt_ward10
@@ -245,41 +245,41 @@ seqdplot(seq, group = chi_pam10$clustering$cluster8,
 dev.off()
 
 #### F plots ####
-png(file = paste0(graph.folder, "seqF50_5.png"),
-    width=w, height=h)
-seqfplot(seq, group = chi_pam10$clustering$cluster5,
-         border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
-         main = paste0("Chi PAM: 5 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\nboth birth cohorts; alpha = ", alpha, ", beta = ", beta, " (", base_seed, ")"),
-         missing.color = "#f7f7f7", idxs = 1:50)
-dev.off()
-
-png(file = paste0(graph.folder, "seqF50_6.png"),
-    width=w, height=h)
-seqfplot(seq, group = chi_pam10$clustering$cluster6,
-         border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
-         main = paste0("Chi PAM: 6 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\nboth birth cohorts; alpha = ", alpha, ", beta = ", beta, " (", base_seed, ")"),
-         missing.color = "#f7f7f7", idxs = 1:50)
-dev.off()
-
-png(file = paste0(graph.folder, "seqF50_7.png"),
-    width=w, height=h)
-seqfplot(seq, group = chi_pam10$clustering$cluster7,
-         border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
-         main = paste0("Chi PAM: 7 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\nboth birth cohorts; alpha = ", alpha, ", beta = ", beta, " (", base_seed, ")"),
-         missing.color = "#f7f7f7", idxs = 1:50)
-dev.off()
-
-png(file = paste0(graph.folder, "seqF50_8.png"),
-    width=w, height=h)
-seqfplot(seq, group = chi_pam10$clustering$cluster8,
-         border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
-         main = paste0("Chi PAM: 8 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
-                       "\nboth birth cohorts; alpha = ", alpha, ", beta = ", beta, " (", base_seed, ")"),
-         missing.color = "#f7f7f7", idxs = 1:50)
-dev.off()
+# png(file = paste0(graph.folder, "seqF50_5.png"),
+#     width=w, height=h)
+# seqfplot(seq, group = chi_pam10$clustering$cluster5,
+#          border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
+#          main = paste0("Chi PAM: 5 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
+#                        "\nboth birth cohorts; alpha = ", alpha, ", beta = ", beta, " (", base_seed, ")"),
+#          missing.color = "#f7f7f7", idxs = 1:50)
+# dev.off()
+# 
+# png(file = paste0(graph.folder, "seqF50_6.png"),
+#     width=w, height=h)
+# seqfplot(seq, group = chi_pam10$clustering$cluster6,
+#          border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
+#          main = paste0("Chi PAM: 6 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
+#                        "\nboth birth cohorts; alpha = ", alpha, ", beta = ", beta, " (", base_seed, ")"),
+#          missing.color = "#f7f7f7", idxs = 1:50)
+# dev.off()
+# 
+# png(file = paste0(graph.folder, "seqF50_7.png"),
+#     width=w, height=h)
+# seqfplot(seq, group = chi_pam10$clustering$cluster7,
+#          border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
+#          main = paste0("Chi PAM: 7 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
+#                        "\nboth birth cohorts; alpha = ", alpha, ", beta = ", beta, " (", base_seed, ")"),
+#          missing.color = "#f7f7f7", idxs = 1:50)
+# dev.off()
+# 
+# png(file = paste0(graph.folder, "seqF50_8.png"),
+#     width=w, height=h)
+# seqfplot(seq, group = chi_pam10$clustering$cluster8,
+#          border = NA, ltext = c(gpstates),   with.legend = FALSE, cex.axis = 2,
+#          main = paste0("Chi PAM: 8 Clusters \n sim., ", het, " het. fert., ", bint,  ", opop size = ", size_opop, 
+#                        "\nboth birth cohorts; alpha = ", alpha, ", beta = ", beta, " (", base_seed, ")"),
+#          missing.color = "#f7f7f7", idxs = 1:50)
+# dev.off()
 
 
 
@@ -309,40 +309,43 @@ dev.off()
 
 # We extract X clusters and re-label them from 1 to X to replace the medoid identifiers
 
-# identify medoids sorted according to separate cluster solution of 1960 cohort
-mc <- chi_pam10$clustering$cluster7[ac$disaggIndex]
+# identify medoids (sorted according to separate cluster solution of 1960 cohort)
+mc <- chi_pam10$clustering$cluster8[ac$disaggIndex]
 med <- as.data.frame(sort(table(mc), decreasing = TRUE))
-med1 <- as.character(med[1,1]) # 3-gen 
-med2 <- as.character(med[3,1]) # 4-gen
-med3 <- as.character(med[2,1]) # 3-gen via 2-gen
-med4 <- as.character(med[5,1]) # 2-gen fuzzy
-med5 <- as.character(med[4,1]) # Non-parent
-med6 <- as.character(med[7,1]) # Non-parent + early death
-med7 <- as.character(med[6,1]) # new cluster
+med1 <- as.character(med[1,1]) # 
+med2 <- as.character(med[2,1]) # 
+med3 <- as.character(med[3,1]) # 
+med4 <- as.character(med[4,1]) # 
+med5 <- as.character(med[5,1]) # 
+med6 <- as.character(med[6,1]) # 
+med7 <- as.character(med[7,1]) # 
+med8 <- as.character(med[8,1]) # 
 
 # store size of clusters for each cluster to add to titles
 propmed <- as.data.frame(sort(prop.table(table(mc)), decreasing = TRUE))
 propmed1 <- round(propmed[1,2], digits = 2)*100 # adjust order of clusters also here!
-propmed2 <- round(propmed[3,2], digits = 2)*100
-propmed3 <- round(propmed[2,2], digits = 2)*100
-propmed4 <- round(propmed[5,2], digits = 2)*100
-propmed5 <- round(propmed[4,2], digits = 2)*100
-propmed6 <- round(propmed[7,2], digits = 2)*100
-propmed7 <- round(propmed[6,2], digits = 2)*100
+propmed2 <- round(propmed[2,2], digits = 2)*100
+propmed3 <- round(propmed[3,2], digits = 2)*100
+propmed4 <- round(propmed[4,2], digits = 2)*100
+propmed5 <- round(propmed[5,2], digits = 2)*100
+propmed6 <- round(propmed[6,2], digits = 2)*100
+propmed7 <- round(propmed[7,2], digits = 2)*100
+propmed8 <- round(propmed[8,2], digits = 2)*100
 
 # create factor containing medoids incl labels
-mc.factor <- factor(mc, levels = c(med1, med2, med3, med4, med5, med6, med7),
-                    as.character(c("1","2","3","4","5","6","7")))
+mc.factor <- factor(mc, levels = c(med1, med2, med3, med4, med5, med6, med7, med8),
+                    as.character(c("1","2","3","4","5","6","7", "8")))
 
 
 # store labels as values for later use
 l1 <- as.character(paste0("Cluster 1 -\n 3-gen family (", propmed1, "%)"))
-l2 <- as.character(paste0("Cluster 2 -\n 4-gen family (", propmed2, "%)"))
-l3 <- as.character(paste0("Cluster 3 -\n 3-gen (via 2-gen) family (", propmed3, "%)"))
-l4 <- as.character(paste0("Cluster 4 -\n 2-gen family/fuzzy (", propmed4, "%)"))
-l5 <- as.character(paste0("Cluster 5 -\n Non-parent (", propmed5, "%)"))
-l6 <- as.character(paste0("Cluster 6 -\n Non-parent + early death (", propmed6, "%)"))
+l2 <- as.character(paste0("Cluster 2 -\n 3-gen (via 4-gen) family (", propmed2, "%)"))
+l3 <- as.character(paste0("Cluster 3 -\n Non-parent (", propmed3, "%)"))
+l4 <- as.character(paste0("Cluster 4 -\n 3-gen (via 2-gen) family (", propmed4, "%)"))
+l5 <- as.character(paste0("Cluster 5 -\n 4-gen family (", propmed5, "%)"))
+l6 <- as.character(paste0("Cluster 6 -\n 2-gen family (", propmed6, "%)"))
 l7 <- as.character(paste0("Cluster 7 -\n 3-gen family + early death (", propmed7, "%)"))
+l8 <- as.character(paste0("Cluster 8 -\n Non-parent + early death (", propmed8, "%)"))
 
 # attach to dataframe to use as weights in plots
 gp$chi <- factor(mc.factor,
@@ -352,7 +355,8 @@ gp$chi <- factor(mc.factor,
                             l4,
                             l5,
                             l6,
-                            l7))
+                            l7,
+                            l8))
 
 
 # save new dataframe for later comparison
@@ -375,20 +379,20 @@ w = 2000
 h = 1250
 
 # different plots with labels
-png(file = paste0(graph.folder, "seqD_7_lab.png"),
+png(file = paste0(graph.folder, "seqD_8_lab.png"),
     width=w, height=h)
 seqdplot(seq, group = gp$chi, border = NA,
          ltext = gpstates, with.legend = FALSE, cex.axis = 2)
 dev.off()
 
-png(file = paste0(graph.folder, "seqI_7_lab.png"),
+png(file = paste0(graph.folder, "seqI_8_lab.png"),
     width=w, height=h)
 seqIplot(seq, group = gp$chi, border = NA,
          ltext = gpstates, with.legend = FALSE, cex.axis = 2,
          missing.color = "#f7f7f7")
 dev.off()
 
-png(file = paste0(graph.folder, "seqF100_7_lab.png"),
+png(file = paste0(graph.folder, "seqF100_8_lab.png"),
     width=w, height=h)
 seqfplot(seq, group = gp$chi, border = NA,
          ltext = gpstates, with.legend = FALSE, cex.axis = 2,
@@ -396,7 +400,7 @@ seqfplot(seq, group = gp$chi, border = NA,
 dev.off()
 
 by(seq, gp$chi, seqmeant)
-png(file = paste0(graph.folder, "mean_plot_7_lab.png"),
+png(file = paste0(graph.folder, "mean_plot_8_lab.png"),
     width=w, height=h)
 seqmtplot(seq, group = gp$chi, border = NA,
           ltext = c(gpstates), 
@@ -494,6 +498,8 @@ c6 <- gp %>%
 c7 <- gp %>% 
   filter(chi == l7)
 
+c8 <- gp %>% 
+  filter(chi == l8)
 
 # Cluster 1
 seq1 <- seqdef(c1, 6:paste0(max_age+6), # for max_age 100 to column 106, for max_age 66 to column 72
@@ -675,7 +681,30 @@ plot(srfchi7, which.plot = "both", main = l7)
 dev.off()
 
 
+# Cluster 8
+seq8 <- seqdef(c8, 6:paste0(max_age+6), # for max_age 100 to column 101, for max_age 66 to column 72
+               labels = gplabels,  
+               cnames = ages, 
+               tick.last = TRUE, 
+               xtstep = 5, 
+               cpal = cblind, 
+               alphabet = gpalpha, 
+               states = gpstates,
+               missing = "D", right = "DEL")
 
+# CHI2 distance
+chi8 <- seqdist(seq8, method = "CHI2", step = max(seqlength(seq8)))
+
+# Select medoids based on distance
+srfchi8 <- seqrf(seq8,
+                 diss = chi8,
+                 sortv = "mds",
+                 grp.meth = "first")
+
+pdf(file = paste0(graph.folder, "seqrf_c8.pdf"),
+    width=w, height=h)
+plot(srfchi8, which.plot = "both", main = l8)
+dev.off()
 
 
 
@@ -685,7 +714,7 @@ h <- 600
 
 # png(file = paste0(graph.folder, "seqrf_cluster6.png"),
 #     width=w, height=h)
-pdf(paste0(graph.folder, "seqrf_cluster7.pdf"), 
+pdf(paste0(graph.folder, "seqrf_cluster8.pdf"), 
     width = 8, height = 6)
 
 original_par <- par(no.readonly = TRUE) # store original current parameter
@@ -698,13 +727,14 @@ plot(srfchi2, which.plot = "medoids", skipar = TRUE, main = l2, cex.main = 1, in
 plot(srfchi3, which.plot = "medoids", skipar = TRUE, main = l3, cex.main = 1, info = "none")
 plot(srfchi4, which.plot = "medoids", skipar = TRUE, main = l4, cex.main = 1, info = "none")
 plot(srfchi5, which.plot = "medoids", skipar = TRUE, main = l5, cex.main = 1, info = "none")
-plot(srfchi6, which.plot = "medoids", skipar = TRUE, main = l6, cex.main = 1, info = "none", xlab = "Age")
-plot(srfchi7, which.plot = "medoids", skipar = TRUE, main = l5, cex.main = 1, info = "none", xlab = "Age")
+plot(srfchi6, which.plot = "medoids", skipar = TRUE, main = l6, cex.main = 1, info = "none")
+plot(srfchi7, which.plot = "medoids", skipar = TRUE, main = l7, cex.main = 1, info = "none", xlab = "Age")
+plot(srfchi7, which.plot = "medoids", skipar = TRUE, main = l8, cex.main = 1, info = "none", xlab = "Age")
 dev.off()
 par(original_par) # reset layout
 
 
-pdf(paste0(graph.folder, "seqrf_both_cluster7.pdf"), 
+pdf(paste0(graph.folder, "seqrf_both_cluster8.pdf"), 
     width = 8, height = 9)
 par(mfrow = c(4, 4), # 3 rows, 4 columns
     mar = c(3.5, 2, 3 , 2), # margins of each plot
@@ -724,11 +754,14 @@ plot(srfchi4, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
 plot(srfchi5, which.plot = "medoids", skipar = TRUE, main = l5, cex.main = 1.1, info = "none")
 plot(srfchi5, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
 
-plot(srfchi6, which.plot = "medoids", skipar = TRUE, main = l6, cex.main = 1.1, info = "none", xlab = "Age")
+plot(srfchi6, which.plot = "medoids", skipar = TRUE, main = l6, cex.main = 1.1, info = "none")
 plot(srfchi6, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
 
 plot(srfchi7, which.plot = "medoids", skipar = TRUE, main = l7, cex.main = 1.1, info = "none", xlab = "Age")
 plot(srfchi7, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
+
+plot(srfchi8, which.plot = "medoids", skipar = TRUE, main = l8, cex.main = 1.1, info = "none", xlab = "Age")
+plot(srfchi8, which.plot = "diss.to.med", skipar = TRUE, cex.main = 1)
 
 dev.off()
 par(original_par) # reset layout
@@ -754,12 +787,13 @@ gp_reg <- gp %>%
                                   "2000")),
     chi = factor(chi,
                  labels = c("C1 - 3-gen",
-                            "C2 - 4-gen",
-                            "C3 - 3- via 2-gen",
-                            "C4 - 2-gen/fuzzy",
-                            "C5 - Non-parent",
-                            "C6 - Non-parent, early death",
-                            "C7 - 3-gen, early death")),
+                            "C2 - 3- via 4-gen",
+                            "C3 - Non-parent",
+                            "C4 - 3- via 2-gen",
+                            "C5 - 4-gen",
+                            "C6 - 2-gen",
+                            "C7 - 3-gen, early death",
+                            "C8 - Non-parent, early death")),
   ) %>% 
   dplyr::select(chi, cohort)
 

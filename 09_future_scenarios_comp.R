@@ -22,7 +22,7 @@ lab_ages <- paste0("age", ages)
 # Generate folders to store results
 
 # 1. Upper level folder based on simulation base_seed
-folder.baseseed <- paste0(folder,"/sim_results_", base_seed,"_/")
+folder.baseseed <- paste0(folder,"/sim_results_socsim_NOR.sup_", base_seed,"/")
 if (!dir.exists(folder.baseseed)) {
   # If not, create the new folder
   dir.create(folder.baseseed)
@@ -48,11 +48,11 @@ load(paste0(folder.baseseed, "gp2000100.RData"))
 gpmed <- gp %>% 
   mutate(scenario = 1)
 
-load(paste0(folder, "/sim_results_260306_low/gp2000100.RData"))
+load(paste0(folder, "/sim_results_socsim_NOR.sup_260709_low/gp2000100.RData"))
 gplo <- gp %>% 
   mutate(scenario = 0)
 
-load(paste0(folder, "/sim_results_260305_high/gp2000100.RData"))
+load(paste0(folder, "/sim_results_socsim_NOR.sup_260608_high/gp2000100.RData"))
 gphi <- gp %>% 
   mutate(scenario = 2)
 

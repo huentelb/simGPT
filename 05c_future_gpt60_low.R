@@ -22,7 +22,7 @@ ages <- as.character(c(0:max_age))
 # Generate folders to store results
 
 # 1. Upper level folder based on simulation base_seed
-folder.baseseed <- paste0(folder,"/sim_results_", base_seed,"_low/")
+folder.baseseed <- paste0(folder,"/sim_results_socsim_NOR.sup_", base_seed,"_low/")
 if (!dir.exists(folder.baseseed)) {
   # If not, create the new folder
   dir.create(folder.baseseed)
@@ -37,9 +37,9 @@ if (!dir.exists(folder.baseseed)) {
 for (c in c(1960, 2000)) {
   
   for (i in c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) {
-    # load(paste0(folder, "/sim_results_", supfile, "_",base_seed,i,"_/gp", c, max_age, ".RData"))
+    # load(paste0(folder, "/sim_results_socsim_NOR.sup_", supfile, "_",base_seed,i,"_/gp", c, max_age, ".RData"))
     
-    load(paste0(folder, "/sim_results_", base_seed,i,"_/gp", c, max_age, ".RData"))
+    load(paste0(folder, "/sim_results_socsim_NOR.sup_", base_seed,i,"_/gp", c, max_age, ".RData"))
     assign(paste0("gp_", i), gp)  
   }
   

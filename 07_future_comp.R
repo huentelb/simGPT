@@ -19,7 +19,7 @@ ages <- as.character(c(0:max_age))
 lab_ages <- paste0("age", ages)
 
 # Folder based on simulation base_seed
-folder.baseseed <- paste0(folder,"/sim_results_",base_seed,"_/")
+folder.baseseed <- paste0(folder,"/sim_results_socsim_NOR.sup_",base_seed, "/")
 if (!dir.exists(folder.baseseed)) {
   # If not, create the new folder
   dir.create(folder.baseseed)
@@ -328,17 +328,17 @@ tab1_ind <- cbind(tab1_ind, diffs_indic) %>%
 # Compare occurrence of states
 comp_occ <- round(seqCompare(seq60, seqdata2 = seq00, stat = "all", 
                              method = "OMspell", sm = "INDELS", indel = 2, expcost = 0.5),
-                  2)
+                  3)
 
 # Compare timing of statesgp$
 comp_time <- round(seqCompare(seq60, seqdata2 = seq00, stat = "all", 
                               method = "CHI2", step = 101),
-                   2)
+                   3)
 
 # Compare duration in statesgp$
 comp_dur <- round(seqCompare(seq60, seqdata2 = seq00, stat = "all", 
                              method = "OMstran", otto = 0.5, sm = "INDELSLOG"),
-                  2)
+                  3)
 
 # Combine all BIC and LRT into one df
 bic <- as.data.frame(comp_occ, row.names = "Occurence") %>% 
@@ -500,8 +500,11 @@ agg_round <- agg %>%
 l1 <- as.character(paste0("Cluster 1 -\n 3-gen family"))
 l2 <- as.character(paste0("Cluster 2 -\n 4-gen family"))
 l3 <- as.character(paste0("Cluster 3 -\n 3-gen (via 2-gen) family"))
-l4 <- as.character(paste0("Cluster 4 -\n 2-gen family/fuzzy"))
+l4 <- as.character(paste0("Cluster 4 -\n 2-gen family"))
 l5 <- as.character(paste0("Cluster 5 -\n Non-parent"))
+l6 <- as.character(paste0("Cluster 6 -\n Non-parent + early death"))
+l7 <- as.character(paste0("Cluster 7 -\n 3-gen + early death"))
+
 
 # Swap rows and columns
 # sorted in descending order (size) within cohorts
@@ -516,6 +519,7 @@ tab2_agg <- agg_round %>%
     starts_with("Cluster 2"),
     starts_with("Cluster 3"),
     starts_with("Cluster 4"),
+    starts_with("Cluster 5"),
     starts_with("Cluster ") # first both non-parent clusters for 1960, then 2000
   )
 
@@ -537,6 +541,7 @@ tab2_n <- gp60 %>%
     starts_with("Cluster 2"),
     starts_with("Cluster 3"),
     starts_with("Cluster 4"),
+    starts_with("Cluster 5"),
     starts_with("Cluster ") # first both non-parent clusters for 1960, then 2000
   ) %>% 
   as.data.frame()
@@ -554,7 +559,7 @@ set_flextable_defaults(
 )
 
 ft2 <- flextable(tab2) %>% 
-  add_header_row(colwidths = c(1,2,2,2,2,3), values = c(" ", l1, l2, l3, l4, l5)) %>% 
+  add_header_row(colwidths = c(1,2,2,2,2,2,1,1), values = c(" ", l1, l2, l3, l4, l5, l6, l7)) %>% 
   align(align = "center", part = "header") %>% 
   align(j = 1, align = "left", part = "body") # first column left-align
 ft2

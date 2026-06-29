@@ -72,13 +72,13 @@ write.table(presim.omar, "presim.omar", row.names = F, col.names = F)
 
 ## RUN SOCSIM SIMULATION
 
-# start loop for simulation rounds
-#for (i in c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) {
+# start loop for simulation rounds (loop does not work on Mac, so we started the simulations one after the other; left the code for Windows users)
+for (i in c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) {
 
 
 # Automatically set a new seed for each simulation in i based on base_seed
-#  seed <- paste0(base_seed,i)
-seed <- paste0(base_seed, 10)
+seed <- paste0(base_seed,i)
+# seed <- paste0(base_seed, 10)
 
 # Record starting time 
 start <- Sys.time()
@@ -89,11 +89,11 @@ rsocsim::socsim(folder, supfile, seed, process_method = "future")
 
 ## IMPORT OUTPUTS TO R
 # Read the opop file using the read_opop function
-opop <- rsocsim::read_opop(fn = paste0(folder, "/sim_results_", seed, "_/result.opop"))
+opop <- rsocsim::read_opop(folder, supfile, seed)
 
 
 # Read the omar file using the read_opop function
-omar <- rsocsim::read_omar(fn = paste0(folder, "/sim_results_", seed, "_/result.omar"))
+omar <- rsocsim::read_omar(folder, supfile, seed)
 
 # Record ending time
 end <- Sys.time()
@@ -227,7 +227,7 @@ yrs_plot <- c("[1850,1855)", "[1880,1885)", "[1910,1915)", "[1940,1945)", "[1960
 ## PLOT SIMULATED AND INPUT DATA TOGETHER
 
 # create folder to store graphs
-graph.folder <- paste0(folder, "/sim_results_", seed, "_/graphs/") # Check if the folder already exists
+graph.folder <- paste0(folder, "/sim_results_socsim_NOR.sup_", seed, "_/graphs/") # Check if the folder already exists
 if (!dir.exists(graph.folder)) {
   # If not, create the new folder
   dir.create(graph.folder)
@@ -302,14 +302,14 @@ asYr <- function(month, last_month=last_month, final_sim_year=final_sim_year) {
   return(final_sim_year - trunc((last_month - month)/12))
 }
 
-## Read the opop file using the read_opop function
-# opop <- rsocsim::read_opop(folder = getwd(), supfile = "socsim_NOR.sup", 
-#                            seed = seed, suffix = "",  fn = NULL)
-# 
-# 
-# ## Read the omar file using the read_opop function
-# omar <- rsocsim::read_omar(folder = getwd(), supfile = "socsim_NOR.sup", 
-#                            seed = seed, suffix = "",  fn = NULL)
+# Read the opop file using the read_opop function (adjust path if you use a Wndows machine)
+opop <- rsocsim::read_opop(folder = getwd(), supfile = "socsim_NOR.sup",
+                           seed = seed, suffix = "",  fn = NULL)
+
+## Read the omar file using the read_opop function (adjust path if you use a Wndows machine)
+omar <- rsocsim::read_omar(folder = getwd(), supfile = "socsim_NOR.sup",
+                           seed = seed, suffix = "",  fn = NULL)
+
 
 # Parameters specific to this simulation: will need to be changed
 last_month <- max(opop$dob) # Last simulated month
@@ -323,8 +323,8 @@ opop <- opop %>%
          dod_year = asYr(dod, last_month=last_month, final_sim_year=final_sim_year))
 
 # Saving opop data frame for usage in R on my Mac
-save(opop, file = paste0(folder, "/sim_results_", seed, "_/opop.RData"))
-#}
+save(opop, file = paste0(folder, "/sim_results_socsim_NOR.sup_", seed, "_/opop.RData"))
+}
 
 
 
@@ -344,7 +344,7 @@ for (i in c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) {
   seed <- paste0(base_seed,i)
   
 # load simulated register data
-load(paste0(folder, "/sim_results_", seed, "_/opop.RData"))
+load(paste0(folder, "/sim_results_socsim_NOR.sup_", seed, "_/opop.RData"))
 
 library(data.table)
 library(dtplyr)
@@ -649,7 +649,7 @@ gp <- gp %>%
          isgparent = ifelse(numgkids > 0, 1, 0),
          dead = ifelse(dod_year > cohort+max_age, 0, 1))
 
-save(gp, file = paste0(folder, "/sim_results_", seed,"_/gp",cohort,max_age,".RData"))
+save(gp, file = paste0(folder, "/sim_results_socsim_NOR.sup_", seed,"_/gp",cohort,max_age,".RData"))
 # end max_age loop
 }
 

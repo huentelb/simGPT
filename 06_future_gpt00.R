@@ -21,9 +21,9 @@ ages <- as.character(c(0:max_age))
 # Generate folders to store results
 
 # 1. Upper level folder based on simulation base_seed
-# folder.baseseed <- paste0(folder,"/sim_results_", supfile, "_",base_seed,"_/")
+# folder.baseseed <- paste0(folder,"/sim_results_socsim_NOR", supfile, "_",base_seed,"_/")
 
-folder.baseseed <- paste0(folder,"/sim_results_", base_seed,"_/")
+folder.baseseed <- paste0(folder,"/sim_results_socsim_NOR.sup_",base_seed, "/")
 if (!dir.exists(folder.baseseed)) {
   # If not, create the new folder
   dir.create(folder.baseseed)
@@ -155,9 +155,9 @@ chi_ward <- hclust(as.dist(chi), method = "ward.D")
 #omt_ward <- hclust(as.dist(omt), method = "ward.D")
 #omc_ward <- hclust(as.dist(omc), method = "ward.D")
 
-chi_ward10 <- as.clustrange(chi_ward, diss = chi, ncluster = 10, weigths = ac$aggWeights)
-chiWard.qual <- chi_ward10
-plot(chiWard.qual, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2)
+# chi_ward10 <- as.clustrange(chi_ward, diss = chi, ncluster = 10, weigths = ac$aggWeights)
+# chiWard.qual <- chi_ward10
+# plot(chiWard.qual, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2)
 
 # omt_ward10 <- as.clustrange(omt_ward, diss = chi, ncluster = 10)
 # omtWard.qual <- omt_ward10
@@ -191,7 +191,7 @@ plot(chi_pam10, stat = c("ASWw", "HG", "PBC", "HC"), norm = "zscore", lwd = 2,
                    "\n ", cohort," birth cohort; alpha = ", alpha, ", beta = ", beta, " (", base_seed, ")"))
 dev.off()
 
-tab_q <- round(summary(chi_pam10, max.rank = 5), 2)
+tab_q <- round(summary(chi_pam10, max.rank = 4), 2)
 tab_q
 
 
@@ -317,9 +317,9 @@ mc <- chi_pam10$clustering$cluster5[ac$disaggIndex]
 med <- as.data.frame(sort(table(mc), decreasing = TRUE))
 med1 <- as.character(med[1,1]) # 3 gen
 med2 <- as.character(med[3,1]) # 4 gen
-med3 <- as.character(med[4,1]) # 3 gen via 2 gen
-med4 <- as.character(med[5,1]) # 2 gen fuzzy
-med5 <- as.character(med[2,1]) # non-parent
+med3 <- as.character(med[4,1]) # 3 via 2 gen
+med4 <- as.character(med[5,1]) # 2 gen
+med5 <- as.character(med[2,1]) # Non-parent
 
 # store size of clusters for each cluster to add to titles
 propmed <- as.data.frame(sort(prop.table(table(mc)), decreasing = TRUE))
@@ -338,7 +338,7 @@ mc.factor <- factor(mc, levels = c(med1, med2, med3, med4, med5),
 l1 <- as.character(paste0("Cluster 1 -\n 3-gen family (", propmed1, "%)"))
 l2 <- as.character(paste0("Cluster 2 -\n 4-gen family (", propmed2, "%)"))
 l3 <- as.character(paste0("Cluster 3 -\n 3-gen (via 2-gen) family (", propmed3, "%)"))
-l4 <- as.character(paste0("Cluster 4 -\n 2-gen family/fuzzy (", propmed4, "%)"))
+l4 <- as.character(paste0("Cluster 4 -\n 2-gen family (", propmed4, "%)"))
 l5 <- as.character(paste0("Cluster 5 -\n Non-parent (", propmed5, "%)"))
 
 # attach to dataframe to use as weights in plots
@@ -630,7 +630,7 @@ par(original_par) # reset layout
 
 pdf(paste0(graph.folder, "seqrf_both_cluster5.pdf"), 
     width = 8, height = 9)
-par(mfrow = c(3, 4), # 3 rows, 4 columns
+par(mfrow = c(4, 4), # 3 rows, 4 columns
     mar = c(3.5, 2, 3 , 2), # margins of each plot
     mgp = c(2, 1, 0)) # margins around axis title, axis labels, and axis line
 plot(srfchi1, which.plot = "medoids", skipar = TRUE, main = l1, cex.main = 1.1, info = "none")
